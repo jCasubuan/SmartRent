@@ -1,2 +1,2 @@
 # SmartRent
-SmartRent - Gown Rental and Inventory Management System
+SmartRent - Gown Rental and Inventory Management System 
