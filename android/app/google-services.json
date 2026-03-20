@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "841826973228",
+    "project_id": "smartrent-ba411",
+    "storage_bucket": "smartrent-ba411.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:841826973228:android:8a6678e327c14354d3c389",
+        "android_client_info": {
+          "package_name": "com.dapplesbybea.smart_rent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-YJqk1P-kPnrqpBqxc6l_P2eQRk8Ad-8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
