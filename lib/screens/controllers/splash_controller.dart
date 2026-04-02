@@ -17,9 +17,9 @@ class SplashController {
     await Future.delayed(const Duration(milliseconds: 2000));
 
     // DEV SHORTCUT: uncomment the one you need, comment out the rest
-    return SplashDestination.landing;
+    //return SplashDestination.landing;
     // return SplashDestination.clientHome;
-    // return SplashDestination.adminHome;
+    //return SplashDestination.adminHome;
 
     // Everything below is skipped when a shortcut is active
     final user = _auth.currentUser;

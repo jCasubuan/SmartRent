@@ -123,18 +123,18 @@ class LandingPage extends StatelessWidget {
               // Divider with "or"
               Row(
                 children: const [
-                  Expanded(child: Divider(color: AppColors.textDark)),
+                  Expanded(child: Divider(color: AppColors.textMid)),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
                       'or',
                       style: TextStyle(
-                        color: AppColors.textDark,
+                        color: AppColors.textMid,
                         fontSize: 13,
                       ),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppColors.textDark)),
+                  Expanded(child: Divider(color: AppColors.textMid)),
                 ],
               ),
 
@@ -228,7 +228,7 @@ class _SocialButton extends StatelessWidget {
           ),
         ),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.textDark),
+          side: const BorderSide(color: AppColors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

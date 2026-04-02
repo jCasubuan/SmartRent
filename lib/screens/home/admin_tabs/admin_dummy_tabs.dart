@@ -1,22 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 
-class InventoryTab extends StatelessWidget {
-  const InventoryTab({super.key});
+class InboxTab extends StatelessWidget {
+  const InboxTab({super.key});
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('Inventory', style: TextStyle(fontSize: 18, color: AppColors.textLight)),
-    );
-  }
-}
-
-class TransactionsTab extends StatelessWidget {
-  const TransactionsTab({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Transactions', style: TextStyle(fontSize: 18, color: AppColors.textLight)),
+      child: Text('Inbox', style: TextStyle(fontSize: 18, color: AppColors.textLight)),
     );
   }
 }
@@ -27,6 +17,16 @@ class ScannerTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Text('Scanner', style: TextStyle(fontSize: 18, color: AppColors.textLight)),
+    );
+  }
+}
+
+class ReportsTab extends StatelessWidget {
+  const ReportsTab({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('Reports', style: TextStyle(fontSize: 18, color: AppColors.textLight)),
     );
   }
 }
