@@ -28,6 +28,9 @@ class SmartRentApp extends StatelessWidget {
         fontFamily: 'sans-serif',
         scaffoldBackgroundColor: AppColors.background,
       ),
+      scrollBehavior: const ScrollBehavior().copyWith(
+        overscroll: false,
+      ),
       home: const SplashScreen(),
     );
   }

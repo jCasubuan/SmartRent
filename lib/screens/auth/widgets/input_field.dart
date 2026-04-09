@@ -25,7 +25,10 @@ class InputField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      obscureText: obscureText,
       keyboardType: keyboardType,
+      enableSuggestions: false,
+      autocorrect: false,
       validator: validator,
       style: const TextStyle(fontSize: 14, color: AppColors.textDark),
       decoration: InputDecoration(
