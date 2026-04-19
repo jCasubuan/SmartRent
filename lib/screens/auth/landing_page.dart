@@ -2,13 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
+import 'package:smart_rent/screens/controllers/login_controller.dart';
+import 'package:smart_rent/screens/controllers/google_sign_in_handler.dart';
+import 'package:smart_rent/screens/controllers/facebook_sign_in_handler.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 import 'signin_screen.dart';
 import 'signup_screen.dart';
 
 // Landing page shown to unauthenticated users with options to sign in or create an account
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
@@ -148,9 +157,7 @@ class LandingPage extends StatelessWidget {
                   height: 20,
                 ),
                 label: 'Continue with Google',
-                onTap: () {
-                  // TODO: Google sign-in
-                },
+                onTap: () => handleGoogleSignIn(context),
               ),
 
               const SizedBox(height: 10),
@@ -163,9 +170,7 @@ class LandingPage extends StatelessWidget {
                   height: 20,
                 ),
                 label: 'Continue with Facebook',
-                onTap: () {
-                  // TODO: Facebook sign-in
-                },
+                onTap: () => handleFacebookSignIn(context),
               ),
 
               const SizedBox(height: 10),

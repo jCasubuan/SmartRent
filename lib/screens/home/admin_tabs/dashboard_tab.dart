@@ -3,7 +3,7 @@ import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/action_card.dart';
 import 'package:smart_rent/core/widgets/stat_summary_card.dart';
 import 'package:smart_rent/screens/admin/gowns/add_gown_screen.dart';
-import 'package:smart_rent/services/user_service.dart';
+import 'package:smart_rent/services/stats_service.dart';
 import 'package:smart_rent/core/widgets/analytics_card.dart';
 
 class DashboardTab extends StatefulWidget {
@@ -14,14 +14,11 @@ class DashboardTab extends StatefulWidget {
 }
 
 class _DashboardTabState extends State<DashboardTab> {
-  String? _adminName;
-
-  // All stats set to 0 — database ready
   int _totalGowns = 0;
   int _totalCustomers = 0;
   int _totalOverdue = 0;
-  int _totalCleaning = 0;
-  int _totalRented = 0;
+  // int _totalCleaning = 0;
+  // int _totalRented = 0;
 
   @override
   void initState() {
@@ -29,14 +26,17 @@ class _DashboardTabState extends State<DashboardTab> {
     _loadData();
   }
 
+// fetch realtime data from the databases
   Future<void> _loadData() async {
-    final name = await UserService.getCurrentUserFirstName();
+    final stats = await StatsService.getAllStats();
+
     if (mounted) {
       setState(() {
-        _adminName = name;
+        _totalGowns = stats['totalGowns']!;
+        _totalCustomers = stats['totalCustomers']!;
+        _totalOverdue = stats['totalOverdue']!;
       });
     }
-    // TODO: fetch stats from Firestore via a StatsService in future sprint
   }
 
   Future<void> _onRefresh() async {
@@ -59,37 +59,40 @@ class _DashboardTabState extends State<DashboardTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Hello, ${_adminName ?? 'Admin'}!',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
-                  ),
+                // SmartRent logo
+                Image.asset(
+                  'assets/icons/smart_rent_logo.png',
+                  height: 70,
+                  fit: BoxFit.contain,
                 ),
-                GestureDetector(
-                  onTap: () {
-                    // TODO: navigate to profile
-                  },
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F0F0),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: const Icon(
-                      Icons.person_outline,
-                      color: AppColors.textLight,
-                      size: 24,
-                    ),
+
+                // admin label
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F0F0),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.person_outline, color: AppColors.textLight, size: 16),
+                      SizedBox(width: 6),
+                      Text(
+                        'Admin',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
             _DashboardSubTitle(title: 'Dashboard'),
 

@@ -12,7 +12,20 @@
           "package_name": "com.dapplesbybea.smart_rent"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "841826973228-qcg53v544dggg9ptvl9ifpn84snvsme3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dapplesbybea.smart_rent",
+            "certificate_hash": "0f3a5f2fb2fe43eff42e0a58fa43962161cbbf22"
+          }
+        },
+        {
+          "client_id": "841826973228-fsbb67lphvpbhemsq7t4fqh7ibkoqe4l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD-YJqk1P-kPnrqpBqxc6l_P2eQRk8Ad-8"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "841826973228-fsbb67lphvpbhemsq7t4fqh7ibkoqe4l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "841826973228-9kt34pfkesd2elhvepgoq9r35pd470hg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.smartRent"
+              }
+            }
+          ]
         }
       }
     }

@@ -4,6 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
 import 'package:smart_rent/screens/controllers/login_controller.dart';
+import 'package:smart_rent/screens/controllers/google_sign_in_handler.dart';
+import 'package:smart_rent/screens/controllers/facebook_sign_in_handler.dart';
 import 'package:smart_rent/screens/auth/signup_screen.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 import 'package:smart_rent/screens/home/admin_home.dart';
@@ -246,9 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               height: 20,
                               width: 20,
                             ),
-                            onTap: () {
-                              // TODO: Google sign-in — future sprint
-                            },
+                            onTap: () => handleGoogleSignIn(context),
                           ),
                           const SizedBox(width: 16),
                           SocialIconButton(
@@ -257,9 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               height: 20,
                               width: 20,
                             ),
-                            onTap: () {
-                              // TODO: Facebook sign-in — future sprint
-                            },
+                            onTap: () => handleFacebookSignIn(context),
                           ),
                         ],
                       ),

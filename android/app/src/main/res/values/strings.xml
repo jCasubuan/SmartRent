@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SmartRent</string>
+    <string name="facebook_app_id">959828009962596</string>
+    <string name="fb_login_protocol_scheme">fb959828009962596</string>
+    <string name="facebook_client_token">90faee63e7424225308640a550989a48</string>
+</resources>
