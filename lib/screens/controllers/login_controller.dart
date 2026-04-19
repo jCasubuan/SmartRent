@@ -25,6 +25,12 @@ class LoginController {
         : LoginDestination.client;
   }
 
+  // Google Sign-In always retruns client
+  Future<LoginDestination> loginWithGoogle() async {
+    await _repository.signInWithGoogle();
+    return LoginDestination.client;
+  }
+
   String mapError(FirebaseAuthException e) {
     return switch (e.code) {
       'user-not-found'     => 'No account found with this email.',
@@ -47,5 +53,10 @@ class LoginController {
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Please enter your password';
     return null;
+  }
+
+  Future<LoginDestination> loginWithFacebook() async {
+    await _repository.signInWithFacebook();
+    return LoginDestination.client;
   }
 }
