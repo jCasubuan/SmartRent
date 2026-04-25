@@ -5,46 +5,50 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/category_model.dart';
+import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/services/category_service.dart';
 import 'package:smart_rent/services/gown_service.dart';
 
-class AddGownScreen extends StatefulWidget {
-  const AddGownScreen({super.key});
+class EditGownScreen extends StatefulWidget {
+  final GownModel gown;
+
+  const EditGownScreen({super.key, required this.gown});
 
   @override
-  State<AddGownScreen> createState() => _AddGownScreenState();
+  State<EditGownScreen> createState() => _EditGownScreenState();
 }
 
-class _AddGownScreenState extends State<AddGownScreen> {
+class _EditGownScreenState extends State<EditGownScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
-  final _nameController = TextEditingController();
-  final _colorController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  // Controllers — pre-filled from existing gown
+  late final TextEditingController _nameController;
+  late final TextEditingController _colorController;
+  late final TextEditingController _priceController;
+  late final TextEditingController _descriptionController;
 
   // Category
   List<CategoryModel> _categories = [];
   CategoryModel? _selectedCategory;
   bool _loadingCategories = true;
 
-  // Measurements — default list, admin can add more
-  final List<Map<String, dynamic>> _measurements = [
-    {'label': 'Bust', 'controller': TextEditingController()},
-    {'label': 'Waist', 'controller': TextEditingController()},
-    {'label': 'Hips', 'controller': TextEditingController()},
-    {'label': 'Shoulder Width', 'controller': TextEditingController()},
-    {'label': 'Hollow to Hem', 'controller': TextEditingController()},
-    {'label': 'Armhole', 'controller': TextEditingController()},
-    {'label': 'Sleeve Length', 'controller': TextEditingController()},
-    {'label': 'Neck Circumference', 'controller': TextEditingController()},
-    {'label': 'Back Width', 'controller': TextEditingController()},
-    {'label': 'Height', 'controller': TextEditingController()},
+  // Status
+  late String _selectedStatus;
+  final List<String> _statusOptions = [
+    'available',
+    'rented',
+    'cleaning',
+    'repair',
   ];
 
+  // Measurements — pre-filled from existing gown, admin can add more
+  late final List<Map<String, dynamic>> _measurements;
+
   // Images
-  final List<File> _selectedImages = [];
+  // Existing Cloudinary URLs the admin wants to keep
+  late List<String> _retainedImageUrls;
+  // Newly picked local images
+  final List<File> _newImages = [];
   final ImagePicker _picker = ImagePicker();
 
   bool _isSaving = false;
@@ -52,6 +56,54 @@ class _AddGownScreenState extends State<AddGownScreen> {
   @override
   void initState() {
     super.initState();
+    final gown = widget.gown;
+
+    _nameController = TextEditingController(text: gown.name);
+    _colorController = TextEditingController(text: gown.color);
+    _priceController =
+        TextEditingController(text: gown.rentalPrice.toStringAsFixed(0));
+    _descriptionController = TextEditingController(text: gown.description);
+
+    _selectedStatus = gown.status;
+    _retainedImageUrls = List<String>.from(gown.imageUrls);
+
+    // Build measurement fields from existing data, preserve order
+    // Default labels we always show
+    final defaultLabels = [
+      'Bust',
+      'Waist',
+      'Hips',
+      'Shoulder Width',
+      'Hollow to Hem',
+      'Armhole',
+      'Sleeve Length',
+      'Neck Circumference',
+      'Back Width',
+      'Height',
+    ];
+
+    _measurements = [];
+
+    // Add default labels first, pre-filled if they exist
+    for (final label in defaultLabels) {
+      _measurements.add({
+        'label': label,
+        'controller': TextEditingController(
+          text: gown.measurements[label] ?? '',
+        ),
+      });
+    }
+
+    // Add any extra measurement keys not in the default list
+    for (final entry in gown.measurements.entries) {
+      if (!defaultLabels.contains(entry.key)) {
+        _measurements.add({
+          'label': entry.key,
+          'controller': TextEditingController(text: entry.value),
+        });
+      }
+    }
+
     _loadCategories();
   }
 
@@ -73,183 +125,95 @@ class _AddGownScreenState extends State<AddGownScreen> {
       setState(() {
         _categories = categories;
         _loadingCategories = false;
-      });
-    }
-  }
 
-  // Request gallery/camera permission — one time only
-  // Future<bool> _requestPermission() async {
-  //   final photos = await Permission.photos.request();
-  //   final camera = await Permission.camera.request();
-
-  //   if (photos.isPermanentlyDenied || camera.isPermanentlyDenied) {
-  //     if (mounted) {
-  //       showDialog(
-  //         context: context,
-  //         builder: (_) => AlertDialog(
-  //           title: const Text('Permission Required'),
-  //           content: const Text(
-  //             'Please allow SmartRent to access your gallery and camera in Settings.',
-  //           ),
-  //           actions: [
-  //             TextButton(
-  //               onPressed: () => Navigator.pop(context),
-  //               child: const Text('Cancel',
-  //                   style: TextStyle(color: AppColors.textLight)),
-  //             ),
-  //             TextButton(
-  //               onPressed: () {
-  //                 openAppSettings();
-  //                 Navigator.pop(context);
-  //               },
-  //               child: const Text('Open Settings',
-  //                   style: TextStyle(color: AppColors.primary)),
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     }
-  //     return false;
-  //   }
-
-  //   return photos.isGranted && camera.isGranted;
-  // }
-
-//   Future<bool> _requestPermission() async {
-//   final Map<Permission, PermissionStatus> statuses = await [
-//     Permission.photos,
-//     Permission.camera,
-//     Permission.storage,
-//   ].request();
-
-//   final photos = statuses[Permission.photos];
-//   final camera = statuses[Permission.camera];
-//   final storage = statuses[Permission.storage];
-
-//   if (photos!.isPermanentlyDenied ||
-//       camera!.isPermanentlyDenied ||
-//       storage!.isPermanentlyDenied) {
-//     if (mounted) {
-//       showDialog(
-//         context: context,
-//         builder: (_) => AlertDialog(
-//           title: const Text('Permission Required'),
-//           content: const Text(
-//             'Please allow SmartRent to access your gallery and camera in Settings.',
-//           ),
-//           actions: [
-//             TextButton(
-//               onPressed: () => Navigator.pop(context),
-//               child: const Text('Cancel',
-//                   style: TextStyle(color: AppColors.textLight)),
-//             ),
-//             TextButton(
-//               onPressed: () {
-//                 openAppSettings();
-//                 Navigator.pop(context);
-//               },
-//               child: const Text('Open Settings',
-//                   style: TextStyle(color: AppColors.primary)),
-//             ),
-//           ],
-//         ),
-//       );
-//     }
-//     return false;
-//   }
-
-//   return (photos.isGranted || photos.isLimited) &&
-//       camera!.isGranted &&
-//       (storage.isGranted || storage.isLimited);
-// }
-
-  // Future<void> _pickImages() async {
-  //   final granted = await _requestPermission();
-  //   if (!granted) return;
-
-  //   final picked = await _picker.pickMultiImage(imageQuality: 80);
-  //   if (picked.isNotEmpty) {
-  //     setState(() {
-  //       for (final img in picked) {
-  //         if (_selectedImages.length < 5) {
-  //           _selectedImages.add(File(img.path));
-  //         }
-  //       }
-  //     });
-  //   }
-  // }
-
-  Future<void> _pickImages() async {
-  try {
-    // Request appropriate permission based on Android version
-    PermissionStatus status;
-
-    if (Platform.isAndroid) {
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      if (androidInfo.version.sdkInt >= 33) {
-        // Android 13+
-        status = await Permission.photos.request();
-      } else {
-        // Android 12 and below
-        status = await Permission.storage.request();
-      }
-
-      if (status.isPermanentlyDenied) {
-        _showPermissionDialog();
-        return;
-      }
-
-      if (!status.isGranted) return;
-    }
-
-    // Open gallery
-    final picked = await _picker.pickMultiImage(imageQuality: 80);
-    if (picked.isNotEmpty && mounted) {
-      setState(() {
-        for (final img in picked) {
-          if (_selectedImages.length < 5) {
-            _selectedImages.add(File(img.path));
-          }
+        // Match existing category by name
+        try {
+          _selectedCategory = _categories.firstWhere(
+            (c) => c.name == widget.gown.category,
+          );
+        } catch (_) {
+          _selectedCategory = null;
         }
       });
     }
-  } catch (e) {
-    _showSnackbar('Could not open gallery. Please try again.');
   }
-}
 
-void _showPermissionDialog() {
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Permission Required'),
-      content: const Text(
-        'Please allow SmartRent to access your gallery in Settings.',
+  Future<void> _pickImages() async {
+    try {
+      PermissionStatus status;
+
+      if (Platform.isAndroid) {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        if (androidInfo.version.sdkInt >= 33) {
+          status = await Permission.photos.request();
+        } else {
+          status = await Permission.storage.request();
+        }
+
+        if (status.isPermanentlyDenied) {
+          _showPermissionDialog();
+          return;
+        }
+
+        if (!status.isGranted) return;
+      }
+
+      final totalImages = _retainedImageUrls.length + _newImages.length;
+      final remaining = 5 - totalImages;
+      if (remaining <= 0) return;
+
+      final picked = await _picker.pickMultiImage(imageQuality: 80);
+      if (picked.isNotEmpty && mounted) {
+        setState(() {
+          for (final img in picked) {
+            if (_retainedImageUrls.length + _newImages.length < 5) {
+              _newImages.add(File(img.path));
+            }
+          }
+        });
+      }
+    } catch (e) {
+      _showSnackbar('Could not open gallery. Please try again.');
+    }
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Permission Required'),
+        content: const Text(
+          'Please allow SmartRent to access your gallery in Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textLight)),
+          ),
+          TextButton(
+            onPressed: () {
+              openAppSettings();
+              Navigator.pop(context);
+            },
+            child: const Text('Open Settings',
+                style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel',
-              style: TextStyle(color: AppColors.textLight)),
-        ),
-        TextButton(
-          onPressed: () {
-            openAppSettings();
-            Navigator.pop(context);
-          },
-          child: const Text('Open Settings',
-              style: TextStyle(color: AppColors.primary)),
-        ),
-      ],
-    ),
-  );
-}
-
-  void _removeImage(int index) {
-    setState(() => _selectedImages.removeAt(index));
+    );
   }
 
-  // Add new measurement field dynamically
+  // Remove an existing Cloudinary image from the retained list
+  void _removeRetainedImage(int index) {
+    setState(() => _retainedImageUrls.removeAt(index));
+  }
+
+  // Remove a newly picked local image
+  void _removeNewImage(int index) {
+    setState(() => _newImages.removeAt(index));
+  }
+
   void _addMeasurementField() {
     showDialog(
       context: context,
@@ -291,7 +255,6 @@ void _showPermissionDialog() {
     );
   }
 
-  // Add new category inline
   void _addCategoryDialog() {
     showDialog(
       context: context,
@@ -317,10 +280,7 @@ void _showPermissionDialog() {
                 final text = controller.text.trim();
                 if (text.isEmpty) return;
 
-                // Close dialog first
                 Navigator.pop(context);
-
-                // Show loading indicator while saving
                 setState(() => _loadingCategories = true);
 
                 final newCategory = await CategoryService.addCategory(text);
@@ -344,7 +304,7 @@ void _showPermissionDialog() {
     );
   }
 
-  Future<void> _saveGown() async {
+  Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategory == null) {
       _showSnackbar('Please select a category');
@@ -353,7 +313,7 @@ void _showPermissionDialog() {
 
     setState(() => _isSaving = true);
 
-    // Build measurements map
+    // Build measurements map — only include non-empty values
     final Map<String, String> measurementsMap = {};
     for (final m in _measurements) {
       final value = (m['controller'] as TextEditingController).text.trim();
@@ -362,23 +322,27 @@ void _showPermissionDialog() {
       }
     }
 
-    final success = await GownService.addGown(
+    final success = await GownService.updateGown(
+      gownId: widget.gown.id,
+      code: widget.gown.code,
       name: _nameController.text.trim(),
       category: _selectedCategory!.name,
       color: _colorController.text.trim(),
       measurements: measurementsMap,
       rentalPrice: double.tryParse(_priceController.text.trim()) ?? 0.0,
       description: _descriptionController.text.trim(),
-      images: _selectedImages,
+      status: _selectedStatus,
+      retainedImageUrls: _retainedImageUrls,
+      newImages: _newImages,
     );
 
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
-        _showSnackbar('Gown saved successfully');
-        Navigator.pop(context);
+        _showSnackbar('Gown updated successfully');
+        Navigator.pop(context, true); // return true so detail screen knows
       } else {
-        _showSnackbar('Failed to save gown. Please try again.');
+        _showSnackbar('Failed to update gown. Please try again.');
       }
     }
   }
@@ -395,8 +359,30 @@ void _showPermissionDialog() {
     );
   }
 
+  String _statusLabel(String status) {
+    return switch (status) {
+      'available' => 'Available',
+      'rented'    => 'Rented',
+      'cleaning'  => 'Cleaning',
+      'repair'    => 'Repair',
+      _           => status,
+    };
+  }
+
+  Color _statusColor(String status) {
+    return switch (status) {
+      'available' => AppColors.primary,
+      'rented'    => Colors.grey,
+      'cleaning'  => Colors.blue,
+      'repair'    => Colors.red,
+      _           => AppColors.primary,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final totalImages = _retainedImageUrls.length + _newImages.length;
+
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
@@ -408,7 +394,7 @@ void _showPermissionDialog() {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Add New Gown',
+          'Edit Gown',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
@@ -425,6 +411,29 @@ void _showPermissionDialog() {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
+                // Gown Code — read only
+                _FieldLabel(label: 'GOWN CODE'),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    widget.gown.code,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textLight,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
 
                 // Gown Name
                 _FieldLabel(label: 'GOWN NAME'),
@@ -451,95 +460,89 @@ void _showPermissionDialog() {
                         children: [
                           _FieldLabel(label: 'CATEGORY'),
                           const SizedBox(height: 8),
-                          // _loadingCategories
-                          //     ? const SizedBox(
-                          //         height: 48,
-                          //         child: Center(
-                          //           child: CircularProgressIndicator(
-                          //             strokeWidth: 2,
-                          //             color: AppColors.primary,
-                          //           ),
-                          //         ),
-                          //       )
-                          //     : 
-                              
-                              Container(
-                                  height: 48,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: AppColors.border),
-                                    borderRadius: BorderRadius.circular(10),
+                          Container(
+                            height: 48,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.border),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<dynamic>(
+                                isExpanded: true,
+                                value: _selectedCategory,
+                                hint: Text(
+                                  _loadingCategories
+                                      ? 'Loading...'
+                                      : 'Select',
+                                  style: const TextStyle(
+                                    color: AppColors.inputHint,
+                                    fontSize: 14,
                                   ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<dynamic>(
-                                      isExpanded: true,
-                                      value: _selectedCategory,
-                                      hint: Text(
-                                        _loadingCategories ? 'Loading...' : 'Select',
-                                        style: const TextStyle(
-                                          color: AppColors.inputHint,
-                                          fontSize: 14,
+                                ),
+                                icon: _loadingCategories
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.primary,
                                         ),
+                                      )
+                                    : const Icon(
+                                        Icons.keyboard_arrow_down,
+                                        color: AppColors.textLight,
                                       ),
-                                      icon: _loadingCategories
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: AppColors.primary,
+                                items: _loadingCategories
+                                    ? null
+                                    : [
+                                        ..._categories.map(
+                                          (cat) => DropdownMenuItem(
+                                            value: cat,
+                                            child: Text(
+                                              cat.name,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: AppColors.textDark,
                                               ),
-                                            )
-                                          : const Icon(
-                                              Icons.keyboard_arrow_down,
-                                              color: AppColors.textLight,
                                             ),
-                                      items: _loadingCategories
-                                          ? null
-                                          : [
-                                              ..._categories.map(
-                                                (cat) => DropdownMenuItem(
-                                                  value: cat,
-                                                  child: Text(
-                                                    cat.name,
-                                                    style: const TextStyle(
-                                                      fontSize: 14,
-                                                      color: AppColors.textDark,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              const DropdownMenuItem(
-                                                value: 'add_new',
-                                                child: Row(
-                                                  children: [
-                                                    Icon(Icons.add, color: AppColors.primary, size: 18),
-                                                    SizedBox(width: 6),
-                                                    Text(
-                                                      'Add Category',
-                                                      style: TextStyle(
-                                                        fontSize: 14,
-                                                        color: AppColors.primary,
-                                                        fontWeight: FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  ],
+                                          ),
+                                        ),
+                                        const DropdownMenuItem(
+                                          value: 'add_new',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.add,
+                                                  color: AppColors.primary,
+                                                  size: 18),
+                                              SizedBox(width: 6),
+                                              Text(
+                                                'Add Category',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: AppColors.primary,
+                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ],
-                                      onChanged: _loadingCategories
-                                          ? null
-                                          : (value) {
-                                              if (value == 'add_new') {
-                                                _addCategoryDialog();
-                                              } else {
-                                                setState(() =>
-                                                    _selectedCategory = value as CategoryModel);
-                                              }
-                                            },
-                                    ),
-                                  ),
-                                ),
+                                          ),
+                                        ),
+                                      ],
+                                onChanged: _loadingCategories
+                                    ? null
+                                    : (value) {
+                                        if (value == 'add_new') {
+                                          _addCategoryDialog();
+                                        } else {
+                                          setState(() =>
+                                              _selectedCategory =
+                                                  value as CategoryModel);
+                                        }
+                                      },
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -565,6 +568,58 @@ void _showPermissionDialog() {
                       ),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // Status
+                _FieldLabel(label: 'STATUS'),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedStatus,
+                      icon: const Icon(Icons.keyboard_arrow_down,
+                          color: AppColors.textLight),
+                      items: _statusOptions.map((status) {
+                        return DropdownMenuItem(
+                          value: status,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: _statusColor(status),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _statusLabel(status),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedStatus = value);
+                        }
+                      },
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 20),
@@ -627,7 +682,8 @@ void _showPermissionDialog() {
                       onTap: _addMeasurementField,
                       child: const Row(
                         children: [
-                          Icon(Icons.add, color: AppColors.primary, size: 16),
+                          Icon(Icons.add,
+                              color: AppColors.primary, size: 16),
                           SizedBox(width: 4),
                           Text(
                             'Add Field',
@@ -644,7 +700,6 @@ void _showPermissionDialog() {
                 ),
                 const SizedBox(height: 8),
 
-                // Measurement fields grid
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -687,32 +742,49 @@ void _showPermissionDialog() {
 
                 const SizedBox(height: 20),
 
-                // Image Picker
+                // Images
                 _FieldLabel(label: 'GOWN IMAGES'),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
+                const Text(
+                  'Tap × to remove an existing image. New images will be uploaded on save.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textLight,
+                  ),
+                ),
+                const SizedBox(height: 10),
 
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    // Existing selected images
-                    ..._selectedImages.asMap().entries.map((entry) {
+                    // Existing Cloudinary images
+                    ..._retainedImageUrls.asMap().entries.map((entry) {
                       return Stack(
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(10),
-                            child: Image.file(
+                            child: Image.network(
                               entry.value,
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 100,
+                                height: 100,
+                                color: const Color(0xFFF5F5F5),
+                                child: const Icon(
+                                  Icons.broken_image_outlined,
+                                  color: AppColors.border,
+                                ),
+                              ),
                             ),
                           ),
                           Positioned(
                             top: 4,
                             right: 4,
                             child: GestureDetector(
-                              onTap: () => _removeImage(entry.key),
+                              onTap: () => _removeRetainedImage(entry.key),
                               child: Container(
                                 width: 22,
                                 height: 22,
@@ -729,8 +801,63 @@ void _showPermissionDialog() {
                       );
                     }),
 
-                    // Add image button
-                    if (_selectedImages.length < 5)
+                    // Newly picked local images
+                    ..._newImages.asMap().entries.map((entry) {
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.file(
+                              entry.value,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          // "NEW" label
+                          Positioned(
+                            bottom: 4,
+                            left: 4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'NEW',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => _removeNewImage(entry.key),
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close,
+                                    color: Colors.white, size: 14),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+
+                    // Add image button — only show if under 5 total
+                    if (totalImages < 5)
                       GestureDetector(
                         onTap: _pickImages,
                         child: Container(
@@ -773,7 +900,8 @@ void _showPermissionDialog() {
                             : () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primary,
-                          side: const BorderSide(color: AppColors.primary),
+                          side:
+                              const BorderSide(color: AppColors.primary),
                           padding:
                               const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -792,7 +920,7 @@ void _showPermissionDialog() {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _isSaving ? null : _saveGown,
+                        onPressed: _isSaving ? null : _saveChanges,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
@@ -815,7 +943,7 @@ void _showPermissionDialog() {
                                 ),
                               )
                             : const Text(
-                                'Save Gown',
+                                'Save Changes',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14,

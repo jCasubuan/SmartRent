@@ -3,6 +3,7 @@ import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/action_card.dart';
 import 'package:smart_rent/core/widgets/stat_summary_card.dart';
 import 'package:smart_rent/screens/admin/gowns/add_gown_screen.dart';
+import 'package:smart_rent/screens/admin/gowns/inventory_screen.dart';
 import 'package:smart_rent/services/stats_service.dart';
 import 'package:smart_rent/core/widgets/analytics_card.dart';
 
@@ -120,7 +121,10 @@ class _DashboardTabState extends State<DashboardTab> {
                   label: 'Gowns',
                   icon: Image.asset('assets/icons/total_gowns.png', height: 50, width: 50),
                   onTap: () {
-                    // TODO: navigate to gowns inventory
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (_) => const InventoryScreen())
+                    );
                   },
                 ),
                 ActionCard(
