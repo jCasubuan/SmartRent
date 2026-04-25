@@ -3,9 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
+import 'package:smart_rent/screens/auth/loading_screen.dart';
 import 'package:smart_rent/screens/controllers/login_controller.dart';
 import 'package:smart_rent/screens/controllers/google_sign_in_handler.dart';
 import 'package:smart_rent/screens/controllers/facebook_sign_in_handler.dart';
+import 'package:smart_rent/screens/auth/forgot_password_screen.dart';
 import 'package:smart_rent/screens/auth/signup_screen.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 import 'package:smart_rent/screens/home/admin_home.dart';
@@ -13,14 +15,14 @@ import 'widgets/field_label.dart';
 import 'widgets/input_field.dart';
 import 'widgets/social_icon_button.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SigninScreen extends StatefulWidget {
+  const SigninScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SigninScreen> createState() => _SigninScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SigninScreenState extends State<SigninScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -29,6 +31,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+  // Rate limiting
+  int _failedAttempts = 0;
+  static const int _maxAttempts = 5;
+  bool _isLockedOut = false;
+  int _lockoutSecondsRemaining = 0;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -36,10 +44,35 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _startLockoutTimer() async {
+    setState(() {
+      _isLockedOut = true;
+      _lockoutSecondsRemaining = 30;
+    });
+
+    while (_lockoutSecondsRemaining > 0) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      setState(() => _lockoutSecondsRemaining--);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isLockedOut = false;
+      _failedAttempts = 0;
+    });
+  }
+
   Future<void> _handleLogin() async {
+    if (_isLockedOut) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+
+    // Show loading screen
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LoadingScreen()),
+    );
 
     try {
       final destination = await _controller.login(
@@ -48,6 +81,23 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!mounted) return;
+
+      // Email verification check — only for clients
+      if (destination == LoginDestination.client) {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null && !user.emailVerified) {
+          await FirebaseAuth.instance.signOut();
+          if (!mounted) return;
+          Navigator.of(context).pop(); // pop loading screen
+          _showUnverifiedDialog(user.email ?? '');
+          return;
+        }
+      }
+
+      setState(() {
+        _failedAttempts = 0;
+        _isLockedOut = false;
+      });
 
       final page = destination == LoginDestination.admin
           ? const AdminHome()
@@ -59,13 +109,95 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      _showError(_controller.mapError(e));
+
+      Navigator.of(context).pop(); // pop loading screen
+
+      setState(() => _failedAttempts++);
+
+      if (_failedAttempts >= _maxAttempts) {
+        _startLockoutTimer();
+        _showError('Too many failed attempts. Please wait 30 seconds.');
+      } else {
+        final remaining = _maxAttempts - _failedAttempts;
+        _showError(
+          '${_controller.mapError(e)} $remaining attempt${remaining == 1 ? '' : 's'} remaining.',
+        );
+      }
     } catch (e) {
       if (!mounted) return;
+      Navigator.of(context).pop(); // pop loading screen
       _showError('Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showUnverifiedDialog(String email) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Email Not Verified',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Please verify your email address before signing in. '
+          'Check your inbox at $email for the verification link.',
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await _controller.resendVerificationEmail();
+                await FirebaseAuth.instance.signOut();
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop();
+                if (!mounted) return;
+                _showError('Verification email resent. Check your inbox and spam folder.');
+              } catch (_) {
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop();
+              }
+            },
+            child: const Text(
+              'Resend Email',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              try {
+                final user = FirebaseAuth.instance.currentUser;
+                // Re-authenticate to resend verification
+                await _controller.login(
+                  email: _emailController.text.trim(),
+                  password: _passwordController.text,
+                );
+                await FirebaseAuth.instance.currentUser!.sendEmailVerification();
+                await FirebaseAuth.instance.signOut();
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop();
+                if (!mounted) return;
+                _showError('Verification email resent. Please check your inbox.');
+              } catch (_) {
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop();
+              }
+            },
+            child: const Text(
+              'Resend Email',
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showError(String message) {
@@ -88,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark),
           onPressed: () {
             FocusScope.of(context).unfocus();
             Navigator.pop(context);
@@ -160,11 +292,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () {
-                            // TODO: Forgot password — future sprint
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordScreen(),
+                              ),
+                            );
                           },
                           style: TextButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
                           child: const Text(
                             'Forgot Password?',
@@ -179,12 +315,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 8),
 
+                      // Lockout message
+                      if (_isLockedOut)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            'Too many attempts. Try again in $_lockoutSecondsRemaining seconds.',
+                            style: const TextStyle(
+                              color: AppColors.errorHighlight,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+
                       // Sign In button
                       SizedBox(
                         width: double.infinity,
                         height: 45,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin,
+                          onPressed: (_isLoading || _isLockedOut)
+                              ? null
+                              : _handleLogin,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.defaultForeground,

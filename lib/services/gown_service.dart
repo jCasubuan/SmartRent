@@ -1,37 +1,18 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:smart_rent/services/cloudinary_service.dart';
 import '../core/models/gown_model.dart';
 
 class GownService {
   static final _collection =
       FirebaseFirestore.instance.collection('gowns');
-  static final _storage = FirebaseStorage.instance;
 
-  // Auto-generate gown code example GWN-001
   static Future<String> _generateCode() async {
     final snapshot = await _collection.get();
     final count = snapshot.docs.length + 1;
     return 'GWN-${count.toString().padLeft(3, '0')}';
   }
 
-  // Upload multiple images to Firebase Storage
-  // Returns list of download URLs
-  static Future<List<String>> uploadImages(
-      List<File> images, String gownCode) async {
-    final List<String> urls = [];
-    for (int i = 0; i < images.length; i++) {
-      final ref = _storage
-          .ref()
-          .child('gowns/$gownCode/image_$i.jpg');
-      final uploadTask = await ref.putFile(images[i]);
-      final url = await uploadTask.ref.getDownloadURL();
-      urls.add(url);
-    }
-    return urls;
-  }
-
-  // Add a new gown
   static Future<bool> addGown({
     required String name,
     required String category,
@@ -44,12 +25,12 @@ class GownService {
     try {
       final code = await _generateCode();
 
-      // Upload images first
+      // Upload images to Cloudinary
       final imageUrls = images.isNotEmpty
-          ? await uploadImages(images, code)
+          ? await CloudinaryService.uploadImages(images, code)
           : <String>[];
 
-      // Save gown document
+      // Save gown document to Firestore
       await _collection.add({
         'code': code,
         'name': name,
@@ -69,7 +50,59 @@ class GownService {
     }
   }
 
-  // Fetch all gowns
+  // Update existing gown — uploads any new local images, keeps retained URLs
+  static Future<bool> updateGown({
+    required String gownId,
+    required String code,
+    required String name,
+    required String category,
+    required String color,
+    required Map<String, String> measurements,
+    required double rentalPrice,
+    required String description,
+    required String status,
+    required List<String> retainedImageUrls, // existing URLs admin kept
+    required List<File> newImages,           // newly picked local images
+  }) async {
+    try {
+      // Upload any new images to Cloudinary
+      final newUrls = newImages.isNotEmpty
+          ? await CloudinaryService.uploadImages(newImages, code)
+          : <String>[];
+
+      // Final image list = kept existing URLs + newly uploaded URLs
+      final allImageUrls = [...retainedImageUrls, ...newUrls];
+
+      await _collection.doc(gownId).update({
+        'name': name,
+        'category': category,
+        'color': color,
+        'measurements': measurements,
+        'rentalPrice': rentalPrice,
+        'description': description,
+        'status': status,
+        'imageUrls': allImageUrls,
+      });
+
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Delete gown document from Firestore only.
+  // Note: Cloudinary images become orphaned and must be removed manually
+  // from the Cloudinary dashboard. Client-side deletion is intentionally
+  // omitted to avoid exposing the api_secret in the app bundle.
+  static Future<bool> deleteGown(String gownId) async {
+    try {
+      await _collection.doc(gownId).delete();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<List<GownModel>> getGowns() async {
     try {
       final snapshot =
@@ -82,7 +115,6 @@ class GownService {
     }
   }
 
-  // Fetch gowns by status
   static Future<List<GownModel>> getGownsByStatus(String status) async {
     try {
       final snapshot = await _collection
@@ -96,13 +128,53 @@ class GownService {
     }
   }
 
-  // Update gown status
   static Future<bool> updateStatus(String gownId, String status) async {
     try {
       await _collection.doc(gownId).update({'status': status});
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  // Fetch gowns with optional search and sort
+  static Future<List<GownModel>> getGownsFiltered({
+    String searchQuery = '',
+    String sortBy = 'addedAt',
+    bool descending = true,
+  }) async {
+    try {
+      Query query = _collection.orderBy(sortBy, descending: descending);
+      final snapshot = await query.get();
+      List<GownModel> gowns = snapshot.docs
+          .map((doc) => GownModel.fromFirestore(doc))
+          .toList();
+
+      if (searchQuery.isNotEmpty) {
+        final q = searchQuery.toLowerCase();
+        gowns = gowns.where((g) {
+          return g.name.toLowerCase().contains(q) ||
+              g.category.toLowerCase().contains(q) ||
+              g.color.toLowerCase().contains(q) ||
+              g.code.toLowerCase().contains(q);
+        }).toList();
+      }
+
+      return gowns;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // Get available gown count
+  static Future<int> getAvailableCount() async {
+    try {
+      final snapshot = await _collection
+          .where('status', isEqualTo: 'available')
+          .get();
+      return snapshot.docs.length;
+    } catch (_) {
+      return 0;
     }
   }
 }

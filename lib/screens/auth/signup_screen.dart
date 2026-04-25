@@ -48,7 +48,45 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+
+      // Show verification email dialog before navigating
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Verify Your Email',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          content: Text(
+            'A verification link has been sent to ${_emailController.text.trim()}. '
+            'Please check your inbox and verify your email before signing in. \n\n'
+            "In case you can't find it, check your spam or junk folder",
+            style: const TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted) return;
+
+      // After dialog is dismissed, go to login screen
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const SigninScreen()),
+        (route) => false,
+      );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       _showError(_controller.mapError(e));
@@ -80,7 +118,7 @@ class _SignupScreenState extends State<SignupScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark),
           onPressed: () {
             FocusScope.of(context).unfocus();
             Navigator.pop(context);
@@ -291,7 +329,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const LoginScreen(),
+                                  builder: (_) => const SigninScreen(),
                                 ),
                               );
                             },

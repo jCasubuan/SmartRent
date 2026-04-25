@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
-import 'client_tabs/home_tab.dart';
 import 'client_tabs/dummy_tabs.dart';
 
 class ClientHome extends StatefulWidget {
@@ -12,13 +12,27 @@ class ClientHome extends StatefulWidget {
 
 class _ClientHomeState extends State<ClientHome> {
   int _currentIndex = 0;
+  String? _photoUrl;
 
-  final List<Widget> _tabs = const [
-    //HomeTab(),
-    FavoritesTab(),
-    CartTab(),
-    NotificationsTab(),
-    ProfileTab(),
+  @override
+  void initState() {
+    super.initState();
+    _loadPhoto();
+  }
+
+  void _loadPhoto() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.photoURL != null) {
+      setState(() => _photoUrl = user.photoURL);
+    }
+  }
+
+  List<Widget> get _tabs => [
+    const HomeTab(),
+    const FavoritesTab(),
+    const CartTab(),
+    const NotificationsTab(),
+    ProfileTab(photoUrl: _photoUrl),
   ];
 
   @override
@@ -36,30 +50,40 @@ class _ClientHomeState extends State<ClientHome> {
         showSelectedLabels: false,
         showUnselectedLabels: false,
         elevation: 8,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.star_border),
             activeIcon: Icon(Icons.star),
             label: 'Favorites',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart_outlined),
             activeIcon: Icon(Icons.shopping_cart),
             label: 'Cart',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.notifications_outlined),
             activeIcon: Icon(Icons.notifications),
             label: 'Notifications',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+            icon: _photoUrl != null
+                ? CircleAvatar(
+                    radius: 12,
+                    backgroundImage: NetworkImage(_photoUrl!),
+                  )
+                : const Icon(Icons.person_outline),
+            activeIcon: _photoUrl != null
+                ? CircleAvatar(
+                    radius: 12,
+                    backgroundImage: NetworkImage(_photoUrl!),
+                  )
+                : const Icon(Icons.person),
             label: 'Profile',
           ),
         ],
@@ -67,4 +91,3 @@ class _ClientHomeState extends State<ClientHome> {
     );
   }
 }
-
