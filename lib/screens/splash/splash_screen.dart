@@ -4,7 +4,7 @@ import 'package:smart_rent/screens/auth/landing_page.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 import 'package:smart_rent/screens/home/admin_home.dart';
 import 'splash_animations.dart';
-import '../controllers/splash_controller.dart';
+import 'package:smart_rent/controllers/splash_controller.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

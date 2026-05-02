@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:smart_rent/core/constants/app_colors.dart'; 
+import 'package:smart_rent/core/constants/app_colors.dart';
 
+/// A small uppercase label used above form input fields.
 class FieldLabel extends StatelessWidget {
   final String label;
 

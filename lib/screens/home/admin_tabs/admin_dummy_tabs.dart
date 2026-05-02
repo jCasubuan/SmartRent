@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:smart_rent/screens/auth/landing_page.dart';
-import 'package:smart_rent/screens/auth/loading_screen.dart';
+import 'package:smart_rent/core/utils/logout_helper.dart';
 
 class InboxTab extends StatelessWidget {
   const InboxTab({super.key});
@@ -37,63 +35,8 @@ class ReportsTab extends StatelessWidget {
 class AdminProfileTab extends StatelessWidget {
   const AdminProfileTab({super.key});
 
-  Future<void> _handleLogout(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Log Out',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        content: const Text(
-          'Are you sure you want to log out?',
-          style: TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: AppColors.textMid,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Log Out',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-    if (!context.mounted) return;
-
-    // Show loading screen
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const LoadingScreen()),
-    );
-
-    // Give loading screen time to show
-    await Future.delayed(const Duration(seconds: 2));
-    await FirebaseAuth.instance.signOut();
-
-    if (!context.mounted) return;
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LandingPage()),
-      (route) => false,
-    );
-  }
+  Future<void> _handleLogout(BuildContext context) =>
+      LogoutHelper.logout(context);
 
   @override
   Widget build(BuildContext context) {
@@ -149,8 +92,8 @@ class AdminProfileTab extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: () => _handleLogout(context),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red, width: 1.5),
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error, width: 1.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
@@ -161,7 +104,7 @@ class AdminProfileTab extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
-                    color: Colors.red,
+                    color: AppColors.error,
                   ),
                 ),
               ),

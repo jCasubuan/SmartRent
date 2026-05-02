@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/screens/auth/loading_screen.dart';
-import 'package:smart_rent/screens/controllers/login_controller.dart';
+import 'package:smart_rent/controllers/login_controller.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 
-Future<void> handleFacebookSignIn(BuildContext context) async {
+Future<void> handleGoogleSignIn(BuildContext context) async {
   final controller = LoginController();
 
   // Show loading screen
@@ -12,7 +12,7 @@ Future<void> handleFacebookSignIn(BuildContext context) async {
   );
 
   try {
-    await controller.loginWithFacebook();
+    await controller.loginWithGoogle();
     if (!context.mounted) return;
 
     Navigator.pushAndRemoveUntil(
@@ -31,7 +31,7 @@ Future<void> handleFacebookSignIn(BuildContext context) async {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Facebook sign-in failed. Please try again.'),
+        content: Text('Google sign-in failed. Please try again.'),
       ),
     );
   }

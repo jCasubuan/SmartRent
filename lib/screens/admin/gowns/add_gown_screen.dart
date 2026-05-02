@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/category_model.dart';
+import 'package:smart_rent/core/widgets/field_label.dart';
+import 'package:smart_rent/core/widgets/gown_form_field.dart';
 import 'package:smart_rent/services/category_service.dart';
 import 'package:smart_rent/services/gown_service.dart';
 
@@ -398,10 +400,10 @@ void _showPermissionDialog() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark),
@@ -427,9 +429,9 @@ void _showPermissionDialog() {
               children: [
 
                 // Gown Name
-                _FieldLabel(label: 'GOWN NAME'),
+                FieldLabel(label: 'GOWN NAME'),
                 const SizedBox(height: 8),
-                _InputField(
+                GownFormField(
                   controller: _nameController,
                   hint: 'Enter gown name',
                   prefixIcon: Icons.checkroom_outlined,
@@ -449,7 +451,7 @@ void _showPermissionDialog() {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _FieldLabel(label: 'CATEGORY'),
+                          FieldLabel(label: 'CATEGORY'),
                           const SizedBox(height: 8),
                           // _loadingCategories
                           //     ? const SizedBox(
@@ -551,9 +553,9 @@ void _showPermissionDialog() {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _FieldLabel(label: 'COLOR'),
+                          FieldLabel(label: 'COLOR'),
                           const SizedBox(height: 8),
-                          _InputField(
+                          GownFormField(
                             controller: _colorController,
                             hint: 'e.g. White',
                             validator: (val) =>
@@ -570,9 +572,9 @@ void _showPermissionDialog() {
                 const SizedBox(height: 20),
 
                 // Price
-                _FieldLabel(label: 'RENTAL PRICE (₱)'),
+                FieldLabel(label: 'RENTAL PRICE (₱)'),
                 const SizedBox(height: 8),
-                _InputField(
+                GownFormField(
                   controller: _priceController,
                   hint: 'e.g. 5000',
                   keyboardType: TextInputType.number,
@@ -591,7 +593,7 @@ void _showPermissionDialog() {
                 const SizedBox(height: 20),
 
                 // Description
-                _FieldLabel(label: 'DESCRIPTION'),
+                FieldLabel(label: 'DESCRIPTION'),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _descriptionController,
@@ -622,7 +624,7 @@ void _showPermissionDialog() {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _FieldLabel(label: 'MEASUREMENTS (cm)'),
+                    FieldLabel(label: 'MEASUREMENTS (cm)'),
                     GestureDetector(
                       onTap: _addMeasurementField,
                       child: const Row(
@@ -688,7 +690,7 @@ void _showPermissionDialog() {
                 const SizedBox(height: 20),
 
                 // Image Picker
-                _FieldLabel(label: 'GOWN IMAGES'),
+                FieldLabel(label: 'GOWN IMAGES'),
                 const SizedBox(height: 8),
 
                 Wrap(
@@ -717,11 +719,11 @@ void _showPermissionDialog() {
                                 width: 22,
                                 height: 22,
                                 decoration: const BoxDecoration(
-                                  color: Colors.black54,
+                                  color: AppColors.overlayDarker,
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.close,
-                                    color: Colors.white, size: 14),
+                                    color: AppColors.defaultForeground, size: 14),
                               ),
                             ),
                           ),
@@ -737,7 +739,7 @@ void _showPermissionDialog() {
                           width: 100,
                           height: 100,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
+                            color: AppColors.surfaceGrey,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: AppColors.border),
                           ),
@@ -795,12 +797,12 @@ void _showPermissionDialog() {
                         onPressed: _isSaving ? null : _saveGown,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppColors.defaultForeground,
                           elevation: 0,
                           padding:
                               const EdgeInsets.symmetric(vertical: 14),
                           disabledBackgroundColor:
-                              AppColors.primary.withOpacity(0.6),
+                              AppColors.primary.withValues(alpha: 0.6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -811,7 +813,7 @@ void _showPermissionDialog() {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  color: Colors.white,
+                                  color: AppColors.defaultForeground,
                                 ),
                               )
                             : const Text(
@@ -828,80 +830,6 @@ void _showPermissionDialog() {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Reusable field label
-class _FieldLabel extends StatelessWidget {
-  final String label;
-  const _FieldLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textDark,
-        letterSpacing: 0.8,
-      ),
-    );
-  }
-}
-
-// Reusable input field
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final IconData? prefixIcon;
-  final TextInputType? keyboardType;
-  final String? Function(String?)? validator;
-
-  const _InputField({
-    required this.controller,
-    required this.hint,
-    this.prefixIcon,
-    this.keyboardType,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: const TextStyle(fontSize: 14, color: AppColors.textDark),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle:
-            const TextStyle(color: AppColors.inputHint, fontSize: 14),
-        prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: AppColors.inputHint, size: 20)
-            : null,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.redAccent),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: Colors.redAccent, width: 1.5),
         ),
       ),
     );

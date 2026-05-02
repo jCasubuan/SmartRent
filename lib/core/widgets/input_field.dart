@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 
+/// A styled [TextFormField] used across auth and form screens.
+///
+/// Supports prefix icon, suffix icon, obscure text, keyboard type,
+/// and a validator. Error borders use [AppColors.error].
 class InputField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
@@ -9,7 +13,7 @@ class InputField extends StatelessWidget {
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
- 
+
   const InputField({
     super.key,
     required this.controller,
@@ -36,8 +40,8 @@ class InputField extends StatelessWidget {
         hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
         prefixIcon: Icon(prefixIcon, color: AppColors.textLight, size: 20),
         suffixIcon: suffixIcon,
-        contentPadding: 
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.border),
@@ -48,12 +52,11 @@ class InputField extends StatelessWidget {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.errorHighlight),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: 
-          const BorderSide(color: AppColors.errorHighlight, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
     );

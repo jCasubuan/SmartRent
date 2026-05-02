@@ -9,6 +9,19 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    // ── DEV SHORTCUT ────────────────────────────────────────────────────────
+    // To skip login and jump straight to a screen during development:
+    //   1. Add this import at the top of the file:
+    //      import 'package:smart_rent/controllers/splash_controller.dart';
+    //   2. Uncomment ONE line below. Only works in debug — no effect in release.
+    //   3. Comment both back out before committing.
+    //
+    // SplashController.debugOverride = SplashDestination.landing;
+    // SplashController.debugOverride = SplashDestination.clientHome;
+    // SplashController.debugOverride = SplashDestination.adminHome;
+    // ────────────────────────────────────────────────────────────────────────
+
     runApp(const SmartRentApp());
 }
 

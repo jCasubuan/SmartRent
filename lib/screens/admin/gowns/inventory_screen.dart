@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/utils/price_formatter.dart';
 import 'package:smart_rent/services/gown_service.dart';
 import 'package:smart_rent/screens/admin/gowns/gown_detail_screen.dart';
 
@@ -191,7 +192,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
+                      color: AppColors.surfaceGrey,
                       borderRadius: BorderRadius.circular(22),
                     ),
                     child: TextField(
@@ -329,25 +330,8 @@ class _GownCard extends StatelessWidget {
 
   const _GownCard({required this.gown});
 
-  Color _statusColor(String status) {
-    return switch (status) {
-      'available' => AppColors.primary,
-      'rented'    => Colors.grey,
-      'cleaning'  => Colors.blue,
-      'repair'    => Colors.red,
-      _           => AppColors.primary,
-    };
-  }
-
-  String _statusLabel(String status) {
-    return switch (status) {
-      'available' => 'AVAILABLE',
-      'rented'    => 'RENTED',
-      'cleaning'  => 'CLEANING',
-      'repair'    => 'REPAIR',
-      _           => status.toUpperCase(),
-    };
-  }
+  Color _statusColor(String status) => AppColors.gownStatusColor(status);
+  String _statusLabel(String status) => AppColors.gownStatusLabel(status);
 
   @override
   Widget build(BuildContext context) {
@@ -358,7 +342,7 @@ class _GownCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -419,7 +403,7 @@ class _GownCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AppColors.defaultForeground,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -446,7 +430,7 @@ class _GownCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '₱${_formatPrice(gown.rentalPrice)}',
+                  '₱${PriceFormatter.format(gown.rentalPrice)}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -496,7 +480,7 @@ class _GownCard extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.defaultForeground,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -521,23 +505,12 @@ class _GownCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: 140,
-      color: const Color(0xFFF5F5F5),
+      color: AppColors.surfaceGrey,
       child: const Icon(
         Icons.checkroom_outlined,
         color: AppColors.border,
         size: 40,
       ),
     );
-  }
-
-  String _formatPrice(double price) {
-    final parts = price.toStringAsFixed(0).split('');
-    final buffer = StringBuffer();
-    final length = parts.length;
-    for (int i = 0; i < length; i++) {
-      if (i > 0 && (length - i) % 3 == 0) buffer.write(',');
-      buffer.write(parts[i]);
-    }
-    return buffer.toString();
   }
 }

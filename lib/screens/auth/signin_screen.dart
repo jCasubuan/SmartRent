@@ -4,16 +4,16 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
 import 'package:smart_rent/screens/auth/loading_screen.dart';
-import 'package:smart_rent/screens/controllers/login_controller.dart';
-import 'package:smart_rent/screens/controllers/google_sign_in_handler.dart';
-import 'package:smart_rent/screens/controllers/facebook_sign_in_handler.dart';
+import 'package:smart_rent/controllers/login_controller.dart';
+import 'package:smart_rent/controllers/google_sign_in_handler.dart';
+import 'package:smart_rent/controllers/facebook_sign_in_handler.dart';
 import 'package:smart_rent/screens/auth/forgot_password_screen.dart';
 import 'package:smart_rent/screens/auth/signup_screen.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 import 'package:smart_rent/screens/home/admin_home.dart';
-import 'widgets/field_label.dart';
-import 'widgets/input_field.dart';
-import 'widgets/social_icon_button.dart';
+import 'package:smart_rent/core/widgets/field_label.dart';
+import 'package:smart_rent/core/widgets/input_field.dart';
+import 'package:smart_rent/core/widgets/social_icon_button.dart';
 
 class SigninScreen extends StatefulWidget {
   const SigninScreen({super.key});
@@ -171,28 +171,15 @@ class _SigninScreenState extends State<SigninScreen> {
             ),
           ),
           TextButton(
-            onPressed: () async {
-              try {
-                final user = FirebaseAuth.instance.currentUser;
-                // Re-authenticate to resend verification
-                await _controller.login(
-                  email: _emailController.text.trim(),
-                  password: _passwordController.text,
-                );
-                await FirebaseAuth.instance.currentUser!.sendEmailVerification();
-                await FirebaseAuth.instance.signOut();
-                if (!ctx.mounted) return;
-                Navigator.of(ctx).pop();
-                if (!mounted) return;
-                _showError('Verification email resent. Please check your inbox.');
-              } catch (_) {
-                if (!ctx.mounted) return;
-                Navigator.of(ctx).pop();
-              }
+            onPressed: () {
+              Navigator.of(ctx).pop();
             },
             child: const Text(
-              'Resend Email',
-              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+              'OK',
+              style: TextStyle(
+                color: AppColors.textMid,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -343,7 +330,7 @@ class _SigninScreenState extends State<SigninScreen> {
                             foregroundColor: AppColors.defaultForeground,
                             elevation: 0,
                             disabledBackgroundColor:
-                                AppColors.primary.withOpacity(0.6),
+                                AppColors.primary.withValues(alpha: 0.6),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(25),
                             ),

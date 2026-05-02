@@ -24,7 +24,7 @@ class _AdminHomeState extends State<AdminHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.surfaceGrey,
       body: SafeArea(child: _tabs[_currentIndex]),
       floatingActionButton: GestureDetector(
         onTap: () => setState(() => _currentIndex = 2),
@@ -36,7 +36,7 @@ class _AdminHomeState extends State<AdminHome> {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
+                color: AppColors.primary.withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -44,7 +44,7 @@ class _AdminHomeState extends State<AdminHome> {
           ),
           child: const Icon(
             Icons.camera_alt,
-            color: Colors.white,
+            color: AppColors.defaultForeground,
             size: 28,
           ),
         ),
@@ -53,7 +53,7 @@ class _AdminHomeState extends State<AdminHome> {
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
-        color: Colors.white,
+        color: AppColors.background,
         elevation: 8,
         child: SizedBox(
           height: 60,

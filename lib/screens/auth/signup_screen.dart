@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
-import 'package:smart_rent/screens/controllers/signup_controller.dart';
+import 'package:smart_rent/core/widgets/field_label.dart';
+import 'package:smart_rent/core/widgets/input_field.dart';
+import 'package:smart_rent/controllers/signup_controller.dart';
 import 'package:smart_rent/screens/auth/signin_screen.dart';
-import 'widgets/field_label.dart';
-import 'widgets/input_field.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -158,7 +158,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           border: Border.all(color: AppColors.border),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.background.withOpacity(0.04),
+                              color: AppColors.background.withValues(alpha: 0.04),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -254,7 +254,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                   foregroundColor: AppColors.defaultForeground,
                                   elevation: 0,
                                   disabledBackgroundColor:
-                                      AppColors.primary.withOpacity(0.6),
+                                      AppColors.primary.withValues(alpha: 0.6),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),

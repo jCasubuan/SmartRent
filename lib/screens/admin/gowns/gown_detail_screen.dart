@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/utils/price_formatter.dart';
 import 'package:smart_rent/screens/admin/gowns/edit_gown_screen.dart';
 import 'package:smart_rent/services/gown_service.dart';
 
@@ -33,36 +34,8 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
     super.dispose();
   }
 
-  Color _statusColor(String status) {
-    return switch (status) {
-      'available' => AppColors.primary,
-      'rented'    => Colors.grey,
-      'cleaning'  => Colors.blue,
-      'repair'    => Colors.red,
-      _           => AppColors.primary,
-    };
-  }
-
-  String _statusLabel(String status) {
-    return switch (status) {
-      'available' => 'AVAILABLE',
-      'rented'    => 'RENTED',
-      'cleaning'  => 'CLEANING',
-      'repair'    => 'REPAIR',
-      _           => status.toUpperCase(),
-    };
-  }
-
-  String _formatPrice(double price) {
-    final parts = price.toStringAsFixed(0).split('');
-    final buffer = StringBuffer();
-    final length = parts.length;
-    for (int i = 0; i < length; i++) {
-      if (i > 0 && (length - i) % 3 == 0) buffer.write(',');
-      buffer.write(parts[i]);
-    }
-    return buffer.toString();
-  }
+  Color _statusColor(String status) => AppColors.gownStatusColor(status);
+  String _statusLabel(String status) => AppColors.gownStatusLabel(status);
 
   // Navigate to Edit screen — refresh local gown data on return
   Future<void> _navigateToEdit() async {
@@ -95,7 +68,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded,
-                color: Colors.redAccent, size: 22),
+                color: AppColors.error, size: 22),
             SizedBox(width: 8),
             Text(
               'Delete Gown',
@@ -116,16 +89,16 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.08),
+                color: AppColors.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: Colors.redAccent.withOpacity(0.3)),
+                    color: AppColors.error.withValues(alpha: 0.3)),
               ),
               child: const Text(
                 '⚠ This action is irreversible. The gown will be permanently deleted and cannot be recovered.',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.redAccent,
+                  color: AppColors.error,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -150,7 +123,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
             _DeleteInfoRow(label: 'Color', value: _gown.color),
             _DeleteInfoRow(
               label: 'Price',
-              value: '₱${_formatPrice(_gown.rentalPrice)}',
+              value: '₱${PriceFormatter.format(_gown.rentalPrice)}',
             ),
           ],
         ),
@@ -171,8 +144,8 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
               await _deleteGown();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.defaultForeground,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -199,7 +172,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${_gown.name} has been deleted.'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10)),
@@ -228,7 +201,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
     final imageCount = images.length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.surfaceGrey,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -275,12 +248,12 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                       left: 12,
                       child: CircleAvatar(
                         radius: 18,
-                        backgroundColor: Colors.black.withOpacity(0.35),
+                        backgroundColor: AppColors.overlayDark,
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           icon: const Icon(
                             Icons.arrow_back,
-                            color: Colors.white,
+                            color: AppColors.defaultForeground,
                             size: 18,
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -297,7 +270,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.45),
+                            color: AppColors.overlayDarker,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -305,7 +278,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: AppColors.defaultForeground,
                             ),
                           ),
                         ),
@@ -330,7 +303,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                               decoration: BoxDecoration(
                                 color: isActive
                                     ? AppColors.primary
-                                    : Colors.white.withOpacity(0.7),
+                                    : AppColors.defaultForeground.withValues(alpha: 0.7),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             );
@@ -368,7 +341,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: AppColors.defaultForeground,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -392,7 +365,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              '₱${_formatPrice(_gown.rentalPrice)}',
+                              '₱${PriceFormatter.format(_gown.rentalPrice)}',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
@@ -444,7 +417,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                                     _isDeleting ? null : _navigateToEdit,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
+                                  foregroundColor: AppColors.defaultForeground,
                                   elevation: 0,
                                   padding: const EdgeInsets.symmetric(
                                       vertical: 14),
@@ -476,11 +449,11 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                                 onPressed:
                                     _isDeleting ? null : _confirmDelete,
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.redAccent,
+                                  foregroundColor: AppColors.error,
                                   padding: const EdgeInsets.symmetric(
                                       vertical: 14),
                                   side: const BorderSide(
-                                      color: Colors.redAccent),
+                                      color: AppColors.error),
                                   shape: RoundedRectangleBorder(
                                     borderRadius:
                                         BorderRadius.circular(30),
@@ -516,7 +489,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
           // Full screen loading overlay while deleting
           if (_isDeleting)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: AppColors.overlayModal,
               child: const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
@@ -528,7 +501,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
 
   Widget _imagePlaceholder() {
     return Container(
-      color: const Color(0xFFF5F5F5),
+      color: AppColors.surfaceGrey,
       child: const Center(
         child: Icon(
           Icons.checkroom_outlined,
@@ -656,7 +629,7 @@ class _MeasurementsGrid extends StatelessWidget {
           padding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF9F6EC),
+            color: AppColors.surfaceCream,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.border),
           ),

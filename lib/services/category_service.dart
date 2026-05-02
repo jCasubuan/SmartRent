@@ -1,27 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../core/models/category_model.dart';
 
 class CategoryService {
   static final _collection =
       FirebaseFirestore.instance.collection('categories');
 
-  // Fetch all categories ordered by order field
+  /// Fetches all categories ordered by the [order] field.
   static Future<List<CategoryModel>> getCategories() async {
     try {
-      final snapshot =
-          await _collection.orderBy('order').get();
+      final snapshot = await _collection.orderBy('order').get();
       return snapshot.docs
           .map((doc) => CategoryModel.fromFirestore(doc))
           .toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[CategoryService.getCategories] $e');
       return [];
     }
   }
 
-  // Add a new category
+  /// Adds a new category and returns the created [CategoryModel], or null on failure.
   static Future<CategoryModel?> addCategory(String name) async {
     try {
-      // Get current count to determine order
       final snapshot = await _collection.get();
       final order = snapshot.docs.length + 1;
 
@@ -32,17 +32,19 @@ class CategoryService {
 
       final doc = await docRef.get();
       return CategoryModel.fromFirestore(doc);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[CategoryService.addCategory] $e');
       return null;
     }
   }
 
-  // Delete a category
+  /// Deletes a category by [categoryId].
   static Future<bool> deleteCategory(String categoryId) async {
     try {
       await _collection.doc(categoryId).delete();
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[CategoryService.deleteCategory] $e');
       return false;
     }
   }
