@@ -6,6 +6,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/category_model.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/widgets/field_label.dart';
+import 'package:smart_rent/core/widgets/gown_form_field.dart';
 import 'package:smart_rent/services/category_service.dart';
 import 'package:smart_rent/services/gown_service.dart';
 
@@ -369,25 +371,17 @@ class _EditGownScreenState extends State<EditGownScreen> {
     };
   }
 
-  Color _statusColor(String status) {
-    return switch (status) {
-      'available' => AppColors.primary,
-      'rented'    => Colors.grey,
-      'cleaning'  => Colors.blue,
-      'repair'    => Colors.red,
-      _           => AppColors.primary,
-    };
-  }
+  Color _statusColor(String status) => AppColors.gownStatusColor(status);
 
   @override
   Widget build(BuildContext context) {
     final totalImages = _retainedImageUrls.length + _newImages.length;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark),
@@ -413,14 +407,14 @@ class _EditGownScreenState extends State<EditGownScreen> {
               children: [
 
                 // Gown Code — read only
-                _FieldLabel(label: 'GOWN CODE'),
+                FieldLabel(label: 'GOWN CODE'),
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AppColors.surfaceGrey,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -436,9 +430,9 @@ class _EditGownScreenState extends State<EditGownScreen> {
                 const SizedBox(height: 20),
 
                 // Gown Name
-                _FieldLabel(label: 'GOWN NAME'),
+                FieldLabel(label: 'GOWN NAME'),
                 const SizedBox(height: 8),
-                _InputField(
+                GownFormField(
                   controller: _nameController,
                   hint: 'Enter gown name',
                   prefixIcon: Icons.checkroom_outlined,
@@ -458,7 +452,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _FieldLabel(label: 'CATEGORY'),
+                          FieldLabel(label: 'CATEGORY'),
                           const SizedBox(height: 8),
                           Container(
                             height: 48,
@@ -554,9 +548,9 @@ class _EditGownScreenState extends State<EditGownScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _FieldLabel(label: 'COLOR'),
+                          FieldLabel(label: 'COLOR'),
                           const SizedBox(height: 8),
-                          _InputField(
+                          GownFormField(
                             controller: _colorController,
                             hint: 'e.g. White',
                             validator: (val) =>
@@ -573,7 +567,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                 const SizedBox(height: 20),
 
                 // Status
-                _FieldLabel(label: 'STATUS'),
+                FieldLabel(label: 'STATUS'),
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
@@ -625,9 +619,9 @@ class _EditGownScreenState extends State<EditGownScreen> {
                 const SizedBox(height: 20),
 
                 // Price
-                _FieldLabel(label: 'RENTAL PRICE (₱)'),
+                FieldLabel(label: 'RENTAL PRICE (₱)'),
                 const SizedBox(height: 8),
-                _InputField(
+                GownFormField(
                   controller: _priceController,
                   hint: 'e.g. 5000',
                   keyboardType: TextInputType.number,
@@ -646,7 +640,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                 const SizedBox(height: 20),
 
                 // Description
-                _FieldLabel(label: 'DESCRIPTION'),
+                FieldLabel(label: 'DESCRIPTION'),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _descriptionController,
@@ -677,7 +671,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _FieldLabel(label: 'MEASUREMENTS (cm)'),
+                    FieldLabel(label: 'MEASUREMENTS (cm)'),
                     GestureDetector(
                       onTap: _addMeasurementField,
                       child: const Row(
@@ -743,7 +737,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                 const SizedBox(height: 20),
 
                 // Images
-                _FieldLabel(label: 'GOWN IMAGES'),
+                FieldLabel(label: 'GOWN IMAGES'),
                 const SizedBox(height: 4),
                 const Text(
                   'Tap × to remove an existing image. New images will be uploaded on save.',
@@ -772,7 +766,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                               errorBuilder: (_, __, ___) => Container(
                                 width: 100,
                                 height: 100,
-                                color: const Color(0xFFF5F5F5),
+                                color: AppColors.surfaceGrey,
                                 child: const Icon(
                                   Icons.broken_image_outlined,
                                   color: AppColors.border,
@@ -789,11 +783,11 @@ class _EditGownScreenState extends State<EditGownScreen> {
                                 width: 22,
                                 height: 22,
                                 decoration: const BoxDecoration(
-                                  color: Colors.black54,
+                                  color: AppColors.overlayDarker,
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.close,
-                                    color: Colors.white, size: 14),
+                                    color: AppColors.defaultForeground, size: 14),
                               ),
                             ),
                           ),
@@ -829,7 +823,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                                 'NEW',
                                 style: TextStyle(
                                   fontSize: 9,
-                                  color: Colors.white,
+                                  color: AppColors.defaultForeground,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -844,11 +838,11 @@ class _EditGownScreenState extends State<EditGownScreen> {
                                 width: 22,
                                 height: 22,
                                 decoration: const BoxDecoration(
-                                  color: Colors.black54,
+                                  color: AppColors.overlayDarker,
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.close,
-                                    color: Colors.white, size: 14),
+                                    color: AppColors.defaultForeground, size: 14),
                               ),
                             ),
                           ),
@@ -864,7 +858,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                           width: 100,
                           height: 100,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
+                            color: AppColors.surfaceGrey,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: AppColors.border),
                           ),
@@ -923,12 +917,12 @@ class _EditGownScreenState extends State<EditGownScreen> {
                         onPressed: _isSaving ? null : _saveChanges,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppColors.defaultForeground,
                           elevation: 0,
                           padding:
                               const EdgeInsets.symmetric(vertical: 14),
                           disabledBackgroundColor:
-                              AppColors.primary.withOpacity(0.6),
+                              AppColors.primary.withValues(alpha: 0.6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -939,7 +933,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  color: Colors.white,
+                                  color: AppColors.defaultForeground,
                                 ),
                               )
                             : const Text(
@@ -956,80 +950,6 @@ class _EditGownScreenState extends State<EditGownScreen> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Reusable field label
-class _FieldLabel extends StatelessWidget {
-  final String label;
-  const _FieldLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textDark,
-        letterSpacing: 0.8,
-      ),
-    );
-  }
-}
-
-// Reusable input field
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final IconData? prefixIcon;
-  final TextInputType? keyboardType;
-  final String? Function(String?)? validator;
-
-  const _InputField({
-    required this.controller,
-    required this.hint,
-    this.prefixIcon,
-    this.keyboardType,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: const TextStyle(fontSize: 14, color: AppColors.textDark),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle:
-            const TextStyle(color: AppColors.inputHint, fontSize: 14),
-        prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: AppColors.inputHint, size: 20)
-            : null,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.redAccent),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: Colors.redAccent, width: 1.5),
         ),
       ),
     );

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
-import 'package:smart_rent/screens/controllers/login_controller.dart';
-import 'widgets/field_label.dart';
-import 'widgets/input_field.dart';
+import 'package:smart_rent/controllers/login_controller.dart';
+import 'package:smart_rent/core/widgets/field_label.dart';
+import 'package:smart_rent/core/widgets/input_field.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -156,7 +156,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.defaultForeground,
                 elevation: 0,
-                disabledBackgroundColor: AppColors.primary.withOpacity(0.6),
+                disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                 ),
@@ -329,7 +329,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
+            color: AppColors.surfaceGrey,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border),
           ),

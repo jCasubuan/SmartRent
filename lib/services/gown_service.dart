@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:smart_rent/services/cloudinary_service.dart';
 import '../core/models/gown_model.dart';
 
 class GownService {
-  static final _collection =
-      FirebaseFirestore.instance.collection('gowns');
+  static final _collection = FirebaseFirestore.instance.collection('gowns');
 
   static Future<String> _generateCode() async {
     final snapshot = await _collection.get();
@@ -25,12 +25,10 @@ class GownService {
     try {
       final code = await _generateCode();
 
-      // Upload images to Cloudinary
       final imageUrls = images.isNotEmpty
           ? await CloudinaryService.uploadImages(images, code)
           : <String>[];
 
-      // Save gown document to Firestore
       await _collection.add({
         'code': code,
         'name': name,
@@ -45,12 +43,13 @@ class GownService {
       });
 
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[GownService.addGown] $e');
       return false;
     }
   }
 
-  // Update existing gown — uploads any new local images, keeps retained URLs
+  /// Updates an existing gown. Uploads any new local images, keeps retained URLs.
   static Future<bool> updateGown({
     required String gownId,
     required String code,
@@ -61,16 +60,14 @@ class GownService {
     required double rentalPrice,
     required String description,
     required String status,
-    required List<String> retainedImageUrls, // existing URLs admin kept
-    required List<File> newImages,           // newly picked local images
+    required List<String> retainedImageUrls,
+    required List<File> newImages,
   }) async {
     try {
-      // Upload any new images to Cloudinary
       final newUrls = newImages.isNotEmpty
           ? await CloudinaryService.uploadImages(newImages, code)
           : <String>[];
 
-      // Final image list = kept existing URLs + newly uploaded URLs
       final allImageUrls = [...retainedImageUrls, ...newUrls];
 
       await _collection.doc(gownId).update({
@@ -85,20 +82,22 @@ class GownService {
       });
 
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[GownService.updateGown] $e');
       return false;
     }
   }
 
-  // Delete gown document from Firestore only.
-  // Note: Cloudinary images become orphaned and must be removed manually
-  // from the Cloudinary dashboard. Client-side deletion is intentionally
-  // omitted to avoid exposing the api_secret in the app bundle.
+  /// Deletes a gown document from Firestore only.
+  /// Note: Cloudinary images become orphaned and must be removed manually
+  /// from the Cloudinary dashboard. Client-side deletion is intentionally
+  /// omitted to avoid exposing the api_secret in the app bundle.
   static Future<bool> deleteGown(String gownId) async {
     try {
       await _collection.doc(gownId).delete();
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[GownService.deleteGown] $e');
       return false;
     }
   }
@@ -107,23 +106,24 @@ class GownService {
     try {
       final snapshot =
           await _collection.orderBy('addedAt', descending: true).get();
-      return snapshot.docs
-          .map((doc) => GownModel.fromFirestore(doc))
-          .toList();
-    } catch (_) {
+      return snapshot.docs.map((doc) => GownModel.fromFirestore(doc)).toList();
+    } on FirebaseException catch (e) {
+      debugPrint('[GownService.getGowns] $e');
+      if (e.code == 'unavailable') rethrow;
+      return [];
+    } catch (e) {
+      debugPrint('[GownService.getGowns] $e');
       return [];
     }
   }
 
   static Future<List<GownModel>> getGownsByStatus(String status) async {
     try {
-      final snapshot = await _collection
-          .where('status', isEqualTo: status)
-          .get();
-      return snapshot.docs
-          .map((doc) => GownModel.fromFirestore(doc))
-          .toList();
-    } catch (_) {
+      final snapshot =
+          await _collection.where('status', isEqualTo: status).get();
+      return snapshot.docs.map((doc) => GownModel.fromFirestore(doc)).toList();
+    } catch (e) {
+      debugPrint('[GownService.getGownsByStatus] $e');
       return [];
     }
   }
@@ -132,23 +132,23 @@ class GownService {
     try {
       await _collection.doc(gownId).update({'status': status});
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[GownService.updateStatus] $e');
       return false;
     }
   }
 
-  // Fetch gowns with optional search and sort
+  /// Fetches gowns with optional search and sort.
   static Future<List<GownModel>> getGownsFiltered({
     String searchQuery = '',
     String sortBy = 'addedAt',
     bool descending = true,
   }) async {
     try {
-      Query query = _collection.orderBy(sortBy, descending: descending);
+      final query = _collection.orderBy(sortBy, descending: descending);
       final snapshot = await query.get();
-      List<GownModel> gowns = snapshot.docs
-          .map((doc) => GownModel.fromFirestore(doc))
-          .toList();
+      List<GownModel> gowns =
+          snapshot.docs.map((doc) => GownModel.fromFirestore(doc)).toList();
 
       if (searchQuery.isNotEmpty) {
         final q = searchQuery.toLowerCase();
@@ -161,20 +161,50 @@ class GownService {
       }
 
       return gowns;
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('[GownService.getGownsFiltered] $e');
+      if (e.code == 'unavailable') rethrow;
+      return [];
+    } catch (e) {
+      debugPrint('[GownService.getGownsFiltered] $e');
       return [];
     }
   }
 
-  // Get available gown count
   static Future<int> getAvailableCount() async {
     try {
-      final snapshot = await _collection
-          .where('status', isEqualTo: 'available')
-          .get();
+      final snapshot =
+          await _collection.where('status', isEqualTo: 'available').get();
       return snapshot.docs.length;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[GownService.getAvailableCount] $e');
       return 0;
     }
+  }
+
+  // ── Real-time streams ──────────────────────────────────────────────────────
+
+  /// Live stream of all gowns, newest first.
+  static Stream<List<GownModel>> gownsStream() {
+    return _collection
+        .orderBy('addedAt', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => GownModel.fromFirestore(doc)).toList());
+  }
+
+  /// Live stream of available gown count.
+  static Stream<int> availableCountStream() {
+    return _collection
+        .where('status', isEqualTo: 'available')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  /// Live stream of total gown count.
+  static Stream<int> totalCountStream() {
+    return _collection
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
   }
 }

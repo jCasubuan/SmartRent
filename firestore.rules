@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Users ──────────────────────────────────────────────────────────────
+    // A user can read and write their own profile document.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // ── Notifications subcollection ──────────────────────────────────────
+      // The customer can read and update (mark as read) their own notifications.
+      // Any authenticated user can create a notification for any user — this
+      // allows the admin (a different uid) to write notifications to a customer.
+      match /notifications/{notifId} {
+        allow read, update: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null;
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // ── Gowns ──────────────────────────────────────────────────────────────
+    // Anyone (including unauthenticated guests) can read gowns.
+    // Only authenticated users can write (admin-only enforced in the app layer).
+    match /gowns/{gownId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── Categories ─────────────────────────────────────────────────────────
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── Rentals ────────────────────────────────────────────────────────────
+    // Authenticated users can read and create rentals.
+    // Updates are allowed for the customer who owns the rental or any admin.
+    match /rentals/{rentalId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+  }
+}

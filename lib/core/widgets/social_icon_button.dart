@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 
+/// A square icon button used for social sign-in options (Google, Facebook).
 class SocialIconButton extends StatelessWidget {
   final Widget icon;
   final VoidCallback onTap;

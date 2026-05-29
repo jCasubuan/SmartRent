@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/guest_preferences.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
-import 'package:smart_rent/screens/controllers/login_controller.dart';
-import 'package:smart_rent/screens/controllers/google_sign_in_handler.dart';
-import 'package:smart_rent/screens/controllers/facebook_sign_in_handler.dart';
+import 'package:smart_rent/controllers/google_sign_in_handler.dart';
+import 'package:smart_rent/controllers/facebook_sign_in_handler.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 import 'signin_screen.dart';
 import 'signup_screen.dart';
@@ -74,7 +74,7 @@ class _LandingPageState extends State<LandingPage> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.defaultForeground,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
@@ -183,7 +183,11 @@ class _LandingPageState extends State<LandingPage> {
                   color: AppColors.textDark,
                 ),
                 label: 'Continue as Guest',
-                onTap: () {
+                onTap: () async {
+                  // Persist guest session so the user isn't shown this
+                  // page again on next launch unless they log out.
+                  await GuestPreferences.setGuestMode();
+                  if (!context.mounted) return;
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => const ClientHome()),

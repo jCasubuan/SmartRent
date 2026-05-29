@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:smart_rent/core/utils/guest_preferences.dart';
 import 'package:smart_rent/screens/auth/loading_screen.dart';
-import 'package:smart_rent/screens/controllers/login_controller.dart';
+import 'package:smart_rent/controllers/login_controller.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 
 Future<void> handleFacebookSignIn(BuildContext context) async {
   final controller = LoginController();
 
-  // Show loading screen
   Navigator.of(context).push(
     MaterialPageRoute(builder: (_) => const LoadingScreen()),
   );
 
   try {
     await controller.loginWithFacebook();
+    await GuestPreferences.clear(); // clear guest flag on successful sign-in
     if (!context.mounted) return;
 
     Navigator.pushAndRemoveUntil(
@@ -23,7 +24,6 @@ Future<void> handleFacebookSignIn(BuildContext context) async {
   } on Exception catch (e) {
     if (!context.mounted) return;
 
-    // Pop loading screen
     Navigator.of(context).pop();
 
     final msg = e.toString();

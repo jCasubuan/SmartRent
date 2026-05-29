@@ -2,58 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
-import 'package:smart_rent/screens/auth/signin_screen.dart';
+import 'package:smart_rent/core/utils/logout_helper.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
-import 'package:smart_rent/screens/auth/loading_screen.dart';
-
-class HomeTab extends StatelessWidget {
-  const HomeTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Home',
-        style: TextStyle(fontSize: 18, color: AppColors.textLight),
-      ),
-    );
-  }
-}
-
-class FavoritesTab extends StatelessWidget {
-  const FavoritesTab({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Favorites', style: TextStyle(fontSize: 18, color: AppColors.textLight)),
-    );
-  }
-}
-
-class CartTab extends StatelessWidget {
-  const CartTab({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Cart', style: TextStyle(fontSize: 18, color: AppColors.textLight)),
-    );
-  }
-}
-
-class NotificationsTab extends StatelessWidget {
-  const NotificationsTab({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Notifications', style: TextStyle(fontSize: 18, color: AppColors.textLight)),
-    );
-  }
-}
 
 class ProfileTab extends StatefulWidget {
-  final String? photoUrl;
-
-  const ProfileTab({super.key, this.photoUrl});
+  const ProfileTab({super.key});
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -61,6 +14,7 @@ class ProfileTab extends StatefulWidget {
 
 class _ProfileTabState extends State<ProfileTab> {
   String? _name;
+  String? _photoUrl;
   bool _isLoading = true;
 
   @override
@@ -75,6 +29,9 @@ class _ProfileTabState extends State<ProfileTab> {
       setState(() => _isLoading = false);
       return;
     }
+
+    // Photo URL comes directly from FirebaseAuth (set by Google/Facebook sign-in)
+    _photoUrl = user.photoURL;
 
     try {
       final doc = await FirebaseFirestore.instance
@@ -92,69 +49,14 @@ class _ProfileTabState extends State<ProfileTab> {
     }
   }
 
-  Future<void> _handleLogout(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Log Out',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        content: const Text(
-          'Are you sure you want to log out?',
-          style: TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: AppColors.textMid,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Log Out',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-    if (!context.mounted) return;
-
-    // Show loading screen
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const LoadingScreen()),
-    );
-
-    // Give loading screen time to show
-    await Future.delayed(const Duration(seconds: 2));
-    await FirebaseAuth.instance.signOut();
-
-    if (!context.mounted) return;
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LandingPage()),
-      (route) => false,
-    );
-}
+  Future<void> _handleLogout(BuildContext context) =>
+      LogoutHelper.logout(context);
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
-    // Guest state
+    // ── Guest state ──────────────────────────────────────────────────────────
     if (user == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -184,7 +86,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'You are browsing as a guest',
+                  'You\'re browsing as a guest',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -194,7 +96,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Sign in to access your profile and manage your rentals.',
+                  'Sign in to view your profile and keep track of your rentals.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
@@ -207,14 +109,12 @@ class _ProfileTabState extends State<ProfileTab> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LandingPage(),
-                        ),
-                      );
-                    },
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LandingPage(),
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.defaultForeground,
@@ -240,14 +140,17 @@ class _ProfileTabState extends State<ProfileTab> {
       );
     }
 
-    // Logged in state
+    // ── Loading state ────────────────────────────────────────────────────────
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
+    // ── Logged-in state ──────────────────────────────────────────────────────
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -271,10 +174,10 @@ class _ProfileTabState extends State<ProfileTab> {
 
             // Profile photo
             Center(
-              child: widget.photoUrl != null
+              child: _photoUrl != null
                   ? CircleAvatar(
                       radius: 50,
-                      backgroundImage: NetworkImage(widget.photoUrl!),
+                      backgroundImage: NetworkImage(_photoUrl!),
                     )
                   : const CircleAvatar(
                       radius: 50,
@@ -308,8 +211,8 @@ class _ProfileTabState extends State<ProfileTab> {
               child: OutlinedButton(
                 onPressed: () => _handleLogout(context),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red, width: 1.5),
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error, width: 1.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
@@ -320,7 +223,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
-                    color: Colors.red,
+                    color: AppColors.error,
                   ),
                 ),
               ),
