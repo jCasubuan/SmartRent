@@ -68,12 +68,12 @@ class StatsService {
         .map((s) => s.docs.length);
   }
 
-  /// Live stream of total customer (role == 'client') count.
-  /// Shows ongoing transactions — rentals with status 'approved' (currently rented out).
+  /// Live stream of ongoing transaction count.
+  /// Shows only gowns physically rented out (picked up by customer).
   static Stream<int> totalCustomersStream() {
     return _firestore
         .collection('rentals')
-        .where('status', isEqualTo: 'approved')
+        .where('status', isEqualTo: 'picked_up')
         .snapshots()
         .map((s) => s.docs.length);
   }

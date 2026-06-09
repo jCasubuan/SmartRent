@@ -60,7 +60,7 @@ class _InboxTabState extends State<InboxTab>
           dividerColor: Colors.transparent,
           tabs: const [
             Tab(text: 'Pending'),
-            Tab(text: 'Active'),
+            Tab(text: 'Awaiting Pickup'),
           ],
         ),
       ),
@@ -137,9 +137,9 @@ class _ActiveList extends StatelessWidget {
         final rentals = snapshot.data ?? [];
         if (rentals.isEmpty) {
           return _emptyView(
-            icon: Icons.checkroom_outlined,
-            title: 'No active rentals',
-            subtitle: 'Approved rentals will appear here.',
+            icon: Icons.schedule_outlined,
+            title: 'No awaiting pickups',
+            subtitle: 'Approved rentals awaiting customer pickup will appear here.',
           );
         }
 
@@ -562,202 +562,129 @@ class _ActiveCard extends StatefulWidget {
 class _ActiveCardState extends State<_ActiveCard> {
   bool _isProcessing = false;
 
-  Future<void> _markReturned() async {
+  Future<void> _confirmPickup() async {
     final r = widget.rental;
-    final hasImage = r.gownImageUrl.isNotEmpty;
-
-    // Bottom sheet with gown image + 3 action buttons laid out horizontally.
-    final choice = await showModalBottomSheet<String>(
+    final confirmed = await showDialog<bool>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Gown image + info row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Gown image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: hasImage
-                      ? Image.network(
-                          r.gownImageUrl,
-                          width: 80,
-                          height: 96,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => _returnPlaceholder(),
-                        )
-                      : _returnPlaceholder(),
-                ),
-                const SizedBox(width: 14),
-
-                // Text
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Mark as Returned',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '"${r.gownName}" has been returned by ${r.customerName}.',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textMid,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'What should happen to the gown next?',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textLight,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // 3 action buttons — horizontal row
-            Row(
-              children: [
-                // Send to Cleaning
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Cleaning',
-                    icon: Icons.local_laundry_service_outlined,
-                    color: AppColors.statusCleaning,
-                    onTap: () => Navigator.pop(ctx, 'cleaning'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // Mark Available
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Available',
-                    icon: Icons.check_circle_outline,
-                    color: AppColors.rentalApproved,
-                    onTap: () => Navigator.pop(ctx, 'available'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // Send to Repair
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Send to Repair',
-                    icon: Icons.build_outlined,
-                    color: AppColors.statusRepair,
-                    onTap: () => Navigator.pop(ctx, 'repair'),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Cancel
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: AppColors.textMid,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ],
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Text('Confirm Pickup',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+        content: Text(
+          '${r.customerName} has arrived to pick up "${r.gownName}"?\n\n'
+          'This will mark the gown as rented out.',
+          style: const TextStyle(fontSize: 14, height: 1.5, color: AppColors.textMid),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textMid, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.rentalApproved,
+              foregroundColor: AppColors.defaultForeground,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Confirm',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
       ),
     );
 
-    if (choice == null) return;
+    if (confirmed != true || !mounted) return;
 
     setState(() => _isProcessing = true);
-    final success = await RentalService.completeRental(
-      widget.rental.id,
-      widget.rental.gownId,
-      nextGownStatus: choice,
-    );
+    final success = await RentalService.confirmPickup(r.id, r.gownId);
     if (mounted) {
       setState(() => _isProcessing = false);
       if (success) {
-        final label = switch (choice) {
-          'cleaning' => 'sent to cleaning',
-          'repair'   => 'sent to repair',
-          _          => 'marked as available',
-        };
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.rental.gownName} returned and $label.'),
-            backgroundColor: AppColors.rentalApproved,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('"${r.gownName}" picked up by ${r.customerName}.'),
+          backgroundColor: AppColors.rentalApproved,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to update. Please try again.'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        _showError('Failed to confirm pickup. Please try again.');
       }
     }
   }
 
-  Widget _returnPlaceholder() {
-    return Container(
-      width: 80,
-      height: 96,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceGrey,
-        borderRadius: BorderRadius.circular(10),
+  Future<void> _markNoShow() async {
+    final r = widget.rental;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_outlined, color: AppColors.rentalNoShow, size: 20),
+            SizedBox(width: 8),
+            Text('Mark as No-show',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          '${r.customerName} didn\'t come to pick up "${r.gownName}"?\n\n'
+          'This will cancel the booking and the gown will remain available for others.',
+          style: const TextStyle(fontSize: 14, height: 1.5, color: AppColors.textMid),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textMid, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.rentalNoShow,
+              foregroundColor: AppColors.defaultForeground,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Confirm No-show',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
       ),
-      child: const Icon(Icons.checkroom_outlined,
-          color: AppColors.border, size: 28),
     );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isProcessing = true);
+    final success = await RentalService.markNoShow(r.id);
+    if (mounted) {
+      setState(() => _isProcessing = false);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('"${r.gownName}" marked as no-show.'),
+          backgroundColor: AppColors.rentalNoShow,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ));
+      } else {
+        _showError('Failed to update. Please try again.');
+      }
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ));
   }
 
   @override
@@ -765,15 +692,16 @@ class _ActiveCardState extends State<_ActiveCard> {
     final r = widget.rental;
     final hasImage = r.gownImageUrl.isNotEmpty;
 
-    // Highlight overdue rentals (return date has passed)
-    final isOverdue = r.returnDate.isBefore(DateTime.now());
+    // Highlight if pickup date has passed (customer is late)
+    final isLate = r.pickupDate.isBefore(
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day));
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(14),
-        border: isOverdue
-            ? Border.all(color: AppColors.error.withValues(alpha: 0.5))
+        border: isLate
+            ? Border.all(color: AppColors.rentalNoShow.withValues(alpha: 0.5))
             : null,
         boxShadow: [
           BoxShadow(
@@ -789,18 +717,15 @@ class _ActiveCardState extends State<_ActiveCard> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Gown image with APPROVED / OVERDUE badge ─────────────────
+              // Gown image with badge
               Stack(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: hasImage
-                        ? Image.network(
-                            r.gownImageUrl,
-                            width: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => _imagePlaceholder(),
-                          )
+                        ? Image.network(r.gownImageUrl,
+                            width: 100, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _imagePlaceholder())
                         : _imagePlaceholder(),
                   ),
                   Positioned(
@@ -810,15 +735,14 @@ class _ActiveCardState extends State<_ActiveCard> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 5),
                       decoration: BoxDecoration(
-                        color: isOverdue
-                            ? AppColors.error
+                        color: isLate
+                            ? AppColors.rentalNoShow
                             : AppColors.rentalApproved,
                         borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(10),
-                        ),
+                            bottom: Radius.circular(10)),
                       ),
                       child: Text(
-                        isOverdue ? 'OVERDUE' : 'ACTIVE',
+                        isLate ? 'LATE PICKUP' : 'AWAITING',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 11,
@@ -834,30 +758,24 @@ class _ActiveCardState extends State<_ActiveCard> {
 
               const SizedBox(width: 12),
 
-              // ── Details + button ─────────────────────────────────────────
+              // Details + buttons
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      r.gownName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(r.gownName,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
-                    Text(
-                      'Customer: ${r.customerName}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMid,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text('Customer: ${r.customerName}',
+                        style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textMid,
+                            fontWeight: FontWeight.w500)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -865,23 +783,19 @@ class _ActiveCardState extends State<_ActiveCard> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Pick up:',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textLight,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                              const Text('Pick up:',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textLight,
+                                      fontWeight: FontWeight.w500)),
                               const SizedBox(height: 2),
-                              Text(
-                                _formatDate(r.pickupDate),
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textDark,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              Text(_formatDate(r.pickupDate),
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: isLate
+                                          ? AppColors.rentalNoShow
+                                          : AppColors.textDark)),
                             ],
                           ),
                         ),
@@ -889,25 +803,17 @@ class _ActiveCardState extends State<_ActiveCard> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Return:',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textLight,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                              const Text('Return:',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textLight,
+                                      fontWeight: FontWeight.w500)),
                               const SizedBox(height: 2),
-                              Text(
-                                _formatDate(r.returnDate),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: isOverdue
-                                      ? AppColors.error
-                                      : AppColors.textDark,
-                                ),
-                              ),
+                              Text(_formatDate(r.returnDate),
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textDark,
+                                      fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ),
@@ -918,38 +824,50 @@ class _ActiveCardState extends State<_ActiveCard> {
                     _isProcessing
                         ? const Center(
                             child: SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          )
-                        : SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _markReturned,
-                              icon: const Icon(Icons.assignment_turned_in_outlined,
-                                  size: 16),
-                              label: const Text(
-                                'Mark as Returned',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
+                                width: 22, height: 22,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: AppColors.primary)))
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: _confirmPickup,
+                                  icon: const Icon(Icons.check, size: 16),
+                                  label: const Text('Picked Up',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.rentalApproved,
+                                    foregroundColor: AppColors.defaultForeground,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(22)),
+                                  ),
                                 ),
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: AppColors.defaultForeground,
-                                elevation: 0,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(22),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _markNoShow,
+                                  icon: const Icon(Icons.person_off_outlined, size: 16),
+                                  label: const Text('No-show',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12)),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.rentalNoShow,
+                                    side: const BorderSide(
+                                        color: AppColors.rentalNoShow, width: 1.5),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(22)),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                   ],
                 ),
@@ -968,58 +886,10 @@ class _ActiveCardState extends State<_ActiveCard> {
         color: AppColors.surfaceGrey,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Icon(
-        Icons.checkroom_outlined,
-        color: AppColors.border,
-        size: 32,
-      ),
+      child: const Icon(Icons.checkroom_outlined,
+          color: AppColors.border, size: 32),
     );
   }
 }
 
-// ── Action button for the Mark as Returned bottom sheet ──────────────────────
 
-class _ActionButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.35)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

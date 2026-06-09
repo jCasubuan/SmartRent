@@ -46,25 +46,30 @@ class AppColors {
 
   // ── Gown status colours ───────────────────────────────────────────────────
   static const statusAvailable = primary;
-  static const statusRented    = Color(0xFF9E9E9E); // grey
+  static const statusReserved  = Color(0xFFBDBDBD); // light grey — reserved/unavailable
+  static const statusRented    = Color(0xFF757575); // dark grey — physically rented out
   static const statusCleaning  = Color(0xFF2196F3); // blue
   static const statusRepair    = Color(0xFFF44336); // red
 
   // ── Rental request status colours ────────────────────────────────────────
   static const rentalPending   = Color(0xFFC79F1D); // gold — same as primary
   static const rentalApproved  = Color(0xFF4CAF50); // green
+  static const rentalPickedUp  = Color(0xFF2196F3); // blue
   static const rentalDeclined  = Color(0xFFF44336); // red
   static const rentalCancelled = Color(0xFF9E9E9E); // grey
-  static const rentalCompleted = Color(0xFF2196F3); // blue
+  static const rentalCompleted = Color(0xFF8BC34A); // light green
+  static const rentalNoShow    = Color(0xFFFF9800); // orange
 
   /// Returns the colour for a given rental status string.
   static Color rentalStatusColor(String status) {
     return switch (status) {
       'pending'   => rentalPending,
       'approved'  => rentalApproved,
+      'picked_up' => rentalPickedUp,
       'rejected'  => rentalDeclined,
       'cancelled' => rentalCancelled,
       'completed' => rentalCompleted,
+      'no_show'   => rentalNoShow,
       _           => rentalPending,
     };
   }
@@ -74,9 +79,11 @@ class AppColors {
     return switch (status) {
       'pending'   => 'PENDING',
       'approved'  => 'APPROVED',
+      'picked_up' => 'PICKED UP',
       'rejected'  => 'DECLINED',
       'cancelled' => 'CANCELLED',
       'completed' => 'COMPLETED',
+      'no_show'   => 'NO SHOW',
       _           => status.toUpperCase(),
     };
   }
@@ -85,6 +92,7 @@ class AppColors {
   static Color gownStatusColor(String status) {
     return switch (status) {
       'available' => statusAvailable,
+      'reserved'  => statusReserved,
       'rented'    => statusRented,
       'cleaning'  => statusCleaning,
       'repair'    => statusRepair,
@@ -96,6 +104,7 @@ class AppColors {
   static String gownStatusLabel(String status) {
     return switch (status) {
       'available' => 'AVAILABLE',
+      'reserved'  => 'UNAVAILABLE',
       'rented'    => 'RENTED',
       'cleaning'  => 'CLEANING',
       'repair'    => 'REPAIR',

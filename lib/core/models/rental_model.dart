@@ -15,10 +15,11 @@ class RentalModel {
   final String phone;
   final DateTime pickupDate;
   final DateTime returnDate;
-  final String status; // pending | approved | rejected | cancelled | completed
+  final String status; // pending | approved | picked_up | rejected | cancelled | completed | no_show
   final String? cancellationReason;
   final DateTime? createdAt;
   final DateTime? approvedAt;
+  final DateTime? pickedUpAt;
   final DateTime? completedAt;
 
   const RentalModel({
@@ -39,6 +40,7 @@ class RentalModel {
     this.cancellationReason,
     this.createdAt,
     this.approvedAt,
+    this.pickedUpAt,
     this.completedAt,
   });
 
@@ -62,6 +64,7 @@ class RentalModel {
       cancellationReason: data['cancellationReason'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       approvedAt: (data['approvedAt'] as Timestamp?)?.toDate(),
+      pickedUpAt: (data['pickedUpAt'] as Timestamp?)?.toDate(),
       completedAt: (data['completedAt'] as Timestamp?)?.toDate(),
     );
   }

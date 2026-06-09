@@ -150,35 +150,50 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
     final imageCount = images.length;
     final isAvailable = gown.status == 'available';
 
+    // Customer-friendly button text based on gown status
+    final buttonText = switch (gown.status) {
+      'available' => 'Rent this Gown',
+      'reserved'  => 'Temporarily Unavailable',
+      'rented'    => 'Currently Rented Out',
+      'cleaning'  => 'Under Maintenance',
+      'repair'    => 'Under Maintenance',
+      _           => 'Currently Unavailable',
+    };
+
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-          child: SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: isAvailable ? _handleRent : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.defaultForeground,
-                disabledBackgroundColor:
-                    AppColors.primary.withValues(alpha: 0.4),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: isAvailable ? _handleRent : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.defaultForeground,
+                    disabledBackgroundColor:
+                        AppColors.primary.withValues(alpha: 0.4),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
               ),
-              child: Text(
-                isAvailable ? 'Rent this Gown' : 'Currently Unavailable',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
+            ],
           ),
         ),
       ),
@@ -330,23 +345,41 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.gownStatusColor(gown.status),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        AppColors.gownStatusLabel(gown.status),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.defaultForeground,
-                          letterSpacing: 0.5,
+                    // Status badge + estimated availability
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.gownStatusColor(gown.status),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            AppColors.gownStatusLabel(gown.status),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.defaultForeground,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (!isAvailable && gown.status != 'reserved') ...[
+                          const SizedBox(width: 8),
+                          if (gown.status == 'rented' &&
+                              gown.rentalReturnDate != null)
+                            _EstimatedDateChip(date: gown.rentalReturnDate!)
+                          else if (gown.status == 'cleaning' &&
+                              gown.cleaningExpectedDate != null)
+                            _EstimatedDateChip(
+                                date: gown.cleaningExpectedDate!)
+                          else if (gown.status == 'repair' &&
+                              gown.repairExpectedDate != null)
+                            _EstimatedDateChip(
+                                date: gown.repairExpectedDate!),
+                        ],
+                      ],
                     ),
 
                     const SizedBox(height: 12),
@@ -759,3 +792,48 @@ class _MeasurementsGrid extends StatelessWidget {
     );
   }
 }
+
+// ── Estimated date chip (for cleaning/repair) ─────────────────────────────────
+
+class _EstimatedDateChip extends StatelessWidget {
+  final DateTime date;
+  const _EstimatedDateChip({required this.date});
+
+  String get _formatted {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceGrey,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.schedule_outlined,
+              size: 11, color: AppColors.textLight),
+          const SizedBox(width: 4),
+          Text(
+            'Available by $_formatted',
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textMid,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Rental return date chip (fetches from active rental) ──────────────────────

@@ -36,6 +36,29 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
   bool _submitAttempted = false;
 
   @override
+  void initState() {
+    super.initState();
+    _prefillCustomerInfo();
+  }
+
+  /// Pre-fills customer name and phone from the user's most recent rental.
+  /// Fields remain editable — this is just a convenience for returning customers.
+  Future<void> _prefillCustomerInfo() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final info = await RentalService.getLastCustomerInfo(user.uid);
+    if (info != null && mounted) {
+      if (_customerNameController.text.isEmpty) {
+        _customerNameController.text = info.name;
+      }
+      if (_phoneController.text.isEmpty) {
+        _phoneController.text = info.phone;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _customerNameController.dispose();
     _phoneController.dispose();

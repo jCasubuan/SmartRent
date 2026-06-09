@@ -67,8 +67,7 @@ class _HomeTabState extends State<HomeTab> {
   List<GownModel> _gownsForCategory(List<GownModel> allGowns, String categoryName) {
     return allGowns
         .where((g) =>
-            g.category.toLowerCase() == categoryName.toLowerCase() &&
-            g.status == 'available')
+            g.category.toLowerCase() == categoryName.toLowerCase())
         .toList();
   }
 
@@ -76,10 +75,9 @@ class _HomeTabState extends State<HomeTab> {
     final query = _searchController.text.toLowerCase().trim();
     if (query.isEmpty) return [];
     return allGowns.where((g) {
-      return g.status == 'available' &&
-          (g.name.toLowerCase().contains(query) ||
-              g.category.toLowerCase().contains(query) ||
-              g.color.toLowerCase().contains(query));
+      return g.name.toLowerCase().contains(query) ||
+          g.category.toLowerCase().contains(query) ||
+          g.color.toLowerCase().contains(query);
     }).toList();
   }
 
@@ -416,7 +414,7 @@ class _HomeTabState extends State<HomeTab> {
                 const SliverFillRemaining(
                   child: Center(
                     child: Text(
-                      'No gowns available at the moment.',
+                      'No gowns to display at the moment.',
                       style: TextStyle(fontSize: 14, color: AppColors.textLight),
                     ),
                   ),

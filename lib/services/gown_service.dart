@@ -207,4 +207,62 @@ class GownService {
         .snapshots()
         .map((snapshot) => snapshot.docs.length);
   }
+
+  // ── Cleaning management ────────────────────────────────────────────────────
+
+  /// Sets a gown to 'cleaning' status with start and expected completion dates.
+  static Future<bool> sendToCleaning({
+    required String gownId,
+    required DateTime startDate,
+    required DateTime expectedDate,
+  }) async {
+    try {
+      await _collection.doc(gownId).update({
+        'status': 'cleaning',
+        'cleaningStartDate': Timestamp.fromDate(startDate),
+        'cleaningExpectedDate': Timestamp.fromDate(expectedDate),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('[GownService.sendToCleaning] $e');
+      return false;
+    }
+  }
+
+  /// Marks a cleaning gown as available and clears cleaning dates.
+  static Future<bool> markAsClean(String gownId) async {
+    try {
+      await _collection.doc(gownId).update({
+        'status': 'available',
+        'cleaningStartDate': FieldValue.delete(),
+        'cleaningExpectedDate': FieldValue.delete(),
+        'rentalReturnDate': FieldValue.delete(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('[GownService.markAsClean] $e');
+      return false;
+    }
+  }
+
+  /// Returns all gowns currently in cleaning status with their cleaning dates.
+  static Future<List<Map<String, dynamic>>> getCleaningGownsWithDates() async {
+    try {
+      final snapshot =
+          await _collection.where('status', isEqualTo: 'cleaning').get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'gown': GownModel.fromFirestore(doc),
+          'cleaningStartDate':
+              (data['cleaningStartDate'] as Timestamp?)?.toDate(),
+          'cleaningExpectedDate':
+              (data['cleaningExpectedDate'] as Timestamp?)?.toDate(),
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('[GownService.getCleaningGownsWithDates] $e');
+      return [];
+    }
+  }
 }

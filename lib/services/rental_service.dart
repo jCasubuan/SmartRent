@@ -149,10 +149,10 @@ class RentalService {
 
   // ── Admin — actions ────────────────────────────────────────────────────────
 
-  /// Approves a rental request, marks the gown as rented, and notifies the customer.
+  /// Approves a rental request, marks the gown as reserved, and notifies the customer.
+  /// The gown shows as 'Unavailable' until the customer picks it up.
   static Future<bool> approveRequest(String rentalId, String gownId) async {
     try {
-      // Fetch the rental first so we have customerId + gownName for the notification.
       final rentalDoc = await _collection.doc(rentalId).get();
       final data = rentalDoc.data();
       final customerId = '${data?['customerId'] ?? ''}';
@@ -167,7 +167,7 @@ class RentalService {
         'status': 'approved',
         'approvedAt': FieldValue.serverTimestamp(),
       });
-      batch.update(_gowns.doc(gownId), {'status': 'rented'});
+      batch.update(_gowns.doc(gownId), {'status': 'reserved'});
       await batch.commit();
 
       // Send in-app notification to the customer.
@@ -187,6 +187,71 @@ class RentalService {
       return true;
     } catch (e) {
       debugPrint('[RentalService.approveRequest] $e');
+      return false;
+    }
+  }
+
+  /// Confirms customer picked up the gown. Sets rental to 'picked_up'
+  /// and gown status from 'reserved' to 'rented'.
+  /// Also stores the return date on the gown document for easy access.
+  static Future<bool> confirmPickup(String rentalId, String gownId) async {
+    try {
+      // Get the return date from the rental
+      final rentalDoc = await _collection.doc(rentalId).get();
+      final returnDate = rentalDoc.data()?['returnDate'] as Timestamp?;
+
+      final batch = FirebaseFirestore.instance.batch();
+      batch.update(_collection.doc(rentalId), {
+        'status': 'picked_up',
+        'pickedUpAt': FieldValue.serverTimestamp(),
+      });
+      batch.update(_gowns.doc(gownId), {
+        'status': 'rented',
+        'rentalReturnDate': returnDate,
+      });
+      await batch.commit();
+      return true;
+    } catch (e) {
+      debugPrint('[RentalService.confirmPickup] $e');
+      return false;
+    }
+  }
+
+  /// Marks an approved rental as no-show. Customer didn't come for pickup.
+  /// Gown goes back to available (was reserved, not rented).
+  static Future<bool> markNoShow(String rentalId) async {
+    try {
+      final rentalDoc = await _collection.doc(rentalId).get();
+      final data = rentalDoc.data();
+      final customerId = '${data?['customerId'] ?? ''}';
+      final gownName = '${data?['gownName'] ?? 'your gown'}';
+      final gownId = '${data?['gownId'] ?? ''}';
+
+      final batch = FirebaseFirestore.instance.batch();
+      batch.update(_collection.doc(rentalId), {
+        'status': 'no_show',
+        'noShowAt': FieldValue.serverTimestamp(),
+      });
+      if (gownId.isNotEmpty) {
+        batch.update(_gowns.doc(gownId), {'status': 'available'});
+      }
+      await batch.commit();
+
+      // Notify the customer
+      if (customerId.isNotEmpty) {
+        await NotificationService.sendNotification(
+          customerId: customerId,
+          title: 'Booking cancelled — no pickup',
+          body: 'Your booking for "$gownName" has been cancelled because it wasn\'t picked up on the scheduled date. Feel free to make a new request anytime.',
+          type: 'rejected',
+          rentalId: rentalId,
+          gownName: gownName,
+        );
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('[RentalService.markNoShow] $e');
       return false;
     }
   }
@@ -242,7 +307,10 @@ class RentalService {
         'status': 'completed',
         'completedAt': FieldValue.serverTimestamp(),
       });
-      batch.update(_gowns.doc(gownId), {'status': nextGownStatus});
+      batch.update(_gowns.doc(gownId), {
+        'status': nextGownStatus,
+        'rentalReturnDate': FieldValue.delete(),
+      });
       await batch.commit();
 
       // Notify the customer that the rental is closed.
@@ -264,9 +332,9 @@ class RentalService {
     }
   }
 
-  // ── Streams — approved rentals (for admin "Active" view) ───────────────────
+  // ── Streams — approved rentals (for admin "Awaiting Pickup" view) ─────────
 
-  /// Real-time stream of all approved (active) rentals, newest first.
+  /// Real-time stream of all approved (awaiting pickup) rentals, newest first.
   static Stream<List<RentalModel>> approvedRentalsStream() {
     return _collection
         .where('status', isEqualTo: 'approved')
@@ -283,6 +351,54 @@ class RentalService {
           });
           return list;
         });
+  }
+
+  // ── Streams — picked up rentals (for admin "Currently Rented" view) ────────
+
+  /// Real-time stream of all picked-up (physically rented out) rentals, newest first.
+  static Stream<List<RentalModel>> pickedUpRentalsStream() {
+    return _collection
+        .where('status', isEqualTo: 'picked_up')
+        .snapshots()
+        .map((snapshot) {
+          final list = snapshot.docs
+              .map((doc) => RentalModel.fromFirestore(doc))
+              .toList();
+          list.sort((a, b) {
+            if (a.pickedUpAt == null && b.pickedUpAt == null) return 0;
+            if (a.pickedUpAt == null) return 1;
+            if (b.pickedUpAt == null) return -1;
+            return b.pickedUpAt!.compareTo(a.pickedUpAt!);
+          });
+          return list;
+        });
+  }
+
+  // ── Customer — prefill data ─────────────────────────────────────────────────
+
+  /// Returns the customer name and phone from the most recent rental for this user.
+  /// Returns null if the user has no previous rentals.
+  static Future<({String name, String phone})?> getLastCustomerInfo(
+      String customerId) async {
+    try {
+      final snapshot = await _collection
+          .where('customerId', isEqualTo: customerId)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+
+      final data = snapshot.docs.first.data();
+      final name = '${data['customerName'] ?? ''}'.trim();
+      final phone = '${data['phone'] ?? ''}'.trim();
+
+      if (name.isEmpty && phone.isEmpty) return null;
+      return (name: name, phone: phone);
+    } catch (e) {
+      debugPrint('[RentalService.getLastCustomerInfo] $e');
+      return null;
+    }
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

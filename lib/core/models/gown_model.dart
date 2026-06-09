@@ -13,6 +13,11 @@ class GownModel {
   final String description;
   final DateTime? addedAt;
 
+  // Status-related dates (stored in gown document)
+  final DateTime? cleaningExpectedDate;
+  final DateTime? repairExpectedDate;
+  final DateTime? rentalReturnDate;
+
   // Client-side only — not stored in Firestore
   final bool isFavorite;
 
@@ -28,6 +33,9 @@ class GownModel {
     this.imageUrls = const [],
     this.description = '',
     this.addedAt,
+    this.cleaningExpectedDate,
+    this.repairExpectedDate,
+    this.rentalReturnDate,
     this.isFavorite = false,
   });
 
@@ -46,6 +54,12 @@ class GownModel {
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
       description: data['description'] ?? '',
       addedAt: (data['addedAt'] as Timestamp?)?.toDate(),
+      cleaningExpectedDate:
+          (data['cleaningExpectedDate'] as Timestamp?)?.toDate(),
+      repairExpectedDate:
+          (data['repairExpectedDate'] as Timestamp?)?.toDate(),
+      rentalReturnDate:
+          (data['rentalReturnDate'] as Timestamp?)?.toDate(),
     );
   }
 

@@ -27,24 +27,16 @@ class CustomerService {
   static final _users =
       FirebaseFirestore.instance.collection('users');
 
-  // ── Customer list ──────────────────────────────────────────────────────────
+  // ── All customers ──────────────────────────────────────────────────────────
 
-  /// Returns unique customers who have at least one approved or completed rental.
-  /// Results are deduplicated by customerId and sorted by name.
-  /// Optionally fetches profile photo URLs from the users collection.
-  static Future<List<CustomerEntry>> getApprovedCustomers() async {
+  /// Returns all unique customers who have any rental record (any status).
+  /// Deduplicated by customerId, sorted alphabetically by name.
+  static Future<List<CustomerEntry>> getAllCustomers() async {
     try {
-      // Fetch all approved + completed rentals in one query each, then merge.
-      final results = await Future.wait([
-        _rentals.where('status', isEqualTo: 'approved').get(),
-        _rentals.where('status', isEqualTo: 'completed').get(),
-      ]);
+      final snapshot = await _rentals.get();
 
-      final allDocs = [...results[0].docs, ...results[1].docs];
-
-      // Deduplicate by customerId, keeping the latest name/phone and counting rentals.
       final Map<String, Map<String, dynamic>> byCustomer = {};
-      for (final doc in allDocs) {
+      for (final doc in snapshot.docs) {
         final data = doc.data();
         final cid = '${data['customerId'] ?? ''}';
         if (cid.isEmpty) continue;
@@ -85,22 +77,48 @@ class CustomerService {
         );
       }).toList();
 
-      // Sort alphabetically by name.
       entries.sort((a, b) =>
           a.customerName.toLowerCase().compareTo(b.customerName.toLowerCase()));
 
       return entries;
     } catch (e) {
-      debugPrint('[CustomerService.getApprovedCustomers] $e');
+      debugPrint('[CustomerService.getAllCustomers] $e');
       return [];
     }
   }
 
-  // ── Customer rental history ────────────────────────────────────────────────
+  // ── Delete customer rental records ─────────────────────────────────────────
 
-  /// Returns all approved + completed rentals for a specific customer,
+  /// Deletes ALL rental records for the given customer IDs.
+  /// Returns true if all deletions succeeded.
+  static Future<bool> deleteCustomerRecords(
+      List<String> customerIds) async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+
+      for (final cid in customerIds) {
+        final snapshot = await _rentals
+            .where('customerId', isEqualTo: cid)
+            .get();
+
+        for (final doc in snapshot.docs) {
+          batch.delete(doc.reference);
+        }
+      }
+
+      await batch.commit();
+      return true;
+    } catch (e) {
+      debugPrint('[CustomerService.deleteCustomerRecords] $e');
+      return false;
+    }
+  }
+
+  // ── Customer approved/completed history ────────────────────────────────────
+
+  /// Returns all approved, picked_up, and completed rentals for a specific customer,
   /// sorted by approvedAt (or createdAt) descending — newest first.
-  static Future<List<RentalModel>> getCustomerHistory(
+  static Future<List<RentalModel>> getCustomerApprovedHistory(
       String customerId) async {
     try {
       final results = await Future.wait([
@@ -110,15 +128,18 @@ class CustomerService {
             .get(),
         _rentals
             .where('customerId', isEqualTo: customerId)
+            .where('status', isEqualTo: 'picked_up')
+            .get(),
+        _rentals
+            .where('customerId', isEqualTo: customerId)
             .where('status', isEqualTo: 'completed')
             .get(),
       ]);
 
-      final allDocs = [...results[0].docs, ...results[1].docs];
+      final allDocs = [...results[0].docs, ...results[1].docs, ...results[2].docs];
       final rentals =
           allDocs.map((doc) => RentalModel.fromFirestore(doc)).toList();
 
-      // Sort newest first using approvedAt if available, else createdAt.
       rentals.sort((a, b) {
         final aDate = a.approvedAt ?? a.createdAt ?? DateTime(2000);
         final bDate = b.approvedAt ?? b.createdAt ?? DateTime(2000);
@@ -127,7 +148,91 @@ class CustomerService {
 
       return rentals;
     } catch (e) {
-      debugPrint('[CustomerService.getCustomerHistory] $e');
+      debugPrint('[CustomerService.getCustomerApprovedHistory] $e');
+      return [];
+    }
+  }
+
+  // ── Customer declined history ──────────────────────────────────────────────
+
+  /// Returns all rejected rentals for a specific customer,
+  /// sorted by createdAt descending — newest first.
+  static Future<List<RentalModel>> getCustomerDeclinedHistory(
+      String customerId) async {
+    try {
+      final snapshot = await _rentals
+          .where('customerId', isEqualTo: customerId)
+          .where('status', isEqualTo: 'rejected')
+          .get();
+
+      final rentals =
+          snapshot.docs.map((doc) => RentalModel.fromFirestore(doc)).toList();
+
+      rentals.sort((a, b) {
+        final aDate = a.createdAt ?? DateTime(2000);
+        final bDate = b.createdAt ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+
+      return rentals;
+    } catch (e) {
+      debugPrint('[CustomerService.getCustomerDeclinedHistory] $e');
+      return [];
+    }
+  }
+
+  // ── Customer cancelled history ─────────────────────────────────────────────
+
+  /// Returns all cancelled rentals for a specific customer,
+  /// sorted by createdAt descending — newest first.
+  static Future<List<RentalModel>> getCustomerCancelledHistory(
+      String customerId) async {
+    try {
+      final snapshot = await _rentals
+          .where('customerId', isEqualTo: customerId)
+          .where('status', isEqualTo: 'cancelled')
+          .get();
+
+      final rentals =
+          snapshot.docs.map((doc) => RentalModel.fromFirestore(doc)).toList();
+
+      rentals.sort((a, b) {
+        final aDate = a.createdAt ?? DateTime(2000);
+        final bDate = b.createdAt ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+
+      return rentals;
+    } catch (e) {
+      debugPrint('[CustomerService.getCustomerCancelledHistory] $e');
+      return [];
+    }
+  }
+
+  // ── Customer pending history ───────────────────────────────────────────────
+
+  /// Returns all pending rentals for a specific customer,
+  /// sorted by createdAt descending — newest first.
+  static Future<List<RentalModel>> getCustomerPendingHistory(
+      String customerId) async {
+    try {
+      final snapshot = await _rentals
+          .where('customerId', isEqualTo: customerId)
+          .where('status', isEqualTo: 'pending')
+          .get();
+
+      final rentals =
+          snapshot.docs.map((doc) => RentalModel.fromFirestore(doc)).toList();
+
+      rentals.sort((a, b) {
+        final aDate = a.createdAt ?? DateTime(2000);
+        final bDate = b.createdAt ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+
+      return rentals;
+    } catch (e) {
+      debugPrint('[CustomerService.getCustomerPendingHistory] $e');
       return [];
     }
   }

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/action_card.dart';
 import 'package:smart_rent/core/widgets/stat_summary_card.dart';
+import 'package:smart_rent/screens/admin/cleaning/cleaning_screen.dart';
 import 'package:smart_rent/screens/admin/customers/customer_list_screen.dart';
 import 'package:smart_rent/screens/admin/gowns/add_gown_screen.dart';
 import 'package:smart_rent/screens/admin/gowns/inventory_screen.dart';
+import 'package:smart_rent/screens/admin/rented/rented_screen.dart';
 import 'package:smart_rent/services/stats_service.dart';
 import 'package:smart_rent/core/widgets/analytics_card.dart';
 
@@ -101,16 +103,20 @@ class DashboardTab extends StatelessWidget {
               ActionCard(
                 label: 'Cleaning',
                 icon: Image.asset('assets/icons/cleaning.png', height: 50, width: 50),
-                onTap: () {
-                  // TODO: navigate to cleaning list
-                },
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const CleaningScreen()),
+                ),
               ),
               ActionCard(
                 label: 'Rented',
                 icon: Image.asset('assets/icons/rented.png', height: 50, width: 50),
-                onTap: () {
-                  // TODO: navigate to rented list
-                },
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const RentedScreen()),
+                ),
               ),
               ActionCard(
                 label: 'Add Gown',
