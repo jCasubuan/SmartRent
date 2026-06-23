@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/utils/logout_helper.dart';
 
@@ -13,11 +14,13 @@ class AdminProfileTab extends StatefulWidget {
 class _AdminProfileTabState extends State<AdminProfileTab> {
   String _name = 'Admin';
   String _email = '';
+  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadVersion();
   }
 
   Future<void> _loadProfile() async {
@@ -27,6 +30,13 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
         _name = 'Admin';
         _email = user?.email ?? '';
       });
+    }
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() => _appVersion = info.version);
     }
   }
 
@@ -297,9 +307,9 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                 _SettingsTile(
                   icon: Icons.info_outline,
                   label: 'App Version',
-                  trailing: const Text(
-                    '1.0.0',
-                    style: TextStyle(
+                  trailing: Text(
+                    _appVersion.isEmpty ? '...' : _appVersion,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textLight,
                     ),

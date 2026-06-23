@@ -46,6 +46,7 @@ dependencies:
   http: ^1.6.0
   shared_preferences: ^2.3.5
   cached_network_image: ^3.4.1
+  package_info_plus: ^8.3.0
 
 dev_dependencies:
   flutter_test:

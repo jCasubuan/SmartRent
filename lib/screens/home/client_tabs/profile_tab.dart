@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/utils/logout_helper.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
@@ -18,11 +19,20 @@ class _ProfileTabState extends State<ProfileTab> {
   String? _photoUrl;
   bool _isLoading = true;
   bool _isEmailPassword = false;
+  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() => _appVersion = info.version);
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -572,12 +582,12 @@ class _ProfileTabState extends State<ProfileTab> {
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline,
+                  const Icon(Icons.info_outline,
                       size: 22, color: AppColors.textMid),
-                  SizedBox(width: 14),
-                  Expanded(
+                  const SizedBox(width: 14),
+                  const Expanded(
                     child: Text(
                       'App Version',
                       style: TextStyle(
@@ -588,8 +598,8 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                   ),
                   Text(
-                    '1.0.0',
-                    style: TextStyle(
+                    _appVersion.isEmpty ? '...' : _appVersion,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textLight,
                     ),
