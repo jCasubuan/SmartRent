@@ -141,8 +141,8 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
         content: const Text(
           'This is the day you\'ll come to the shop to get the gown.\n\n'
           'Once your booking is confirmed, please make sure to pick it up '
-          'within 24 hours. If you miss that window, your booking will be '
-          'cancelled and the gown will be open for others to rent.',
+          'on this date. If you don\'t show up, your booking may be '
+          'marked as a no-show and the gown will be made available to others.',
           style: TextStyle(fontSize: 14, height: 1.6),
         ),
         actions: [
@@ -285,11 +285,12 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                 // Policy 1 — Pick-up
                 _PolicyPoint(
                   icon: Icons.schedule_outlined,
-                  title: 'Pick Up on Time',
+                  title: 'Pick Up on Your Scheduled Date',
                   body:
-                      'Once your booking is confirmed, you have 24 hours '
-                      'to come to the shop and get the gown. If you don\'t '
-                      'pick it up in time, your booking will be cancelled.',
+                      'Once your booking is confirmed, please come to the '
+                      'shop on the pick-up date you selected. If you don\'t '
+                      'show up, your booking may be marked as a no-show '
+                      'and the gown will be made available to others.',
                 ),
 
                 const SizedBox(height: 12),

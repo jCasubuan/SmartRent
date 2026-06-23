@@ -78,12 +78,34 @@ class StatsService {
         .map((s) => s.docs.length);
   }
 
-  /// Live stream of overdue gown count.
+  /// Live stream of overdue count across rentals, cleaning, and repair.
+  /// A gown is overdue when:
+  /// - Status 'rented' or rental status 'picked_up' with returnDate < now
+  /// - Status 'cleaning' with cleaningExpectedDate < now
+  /// - Status 'repair' with repairExpectedDate < now
   static Stream<int> totalOverdueStream() {
-    return _firestore
-        .collection('gowns')
-        .where('status', isEqualTo: 'overdue')
-        .snapshots()
-        .map((s) => s.docs.length);
+    return _firestore.collection('gowns').snapshots().map((snapshot) {
+      final now = DateTime.now();
+      int count = 0;
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final status = data['status'] as String? ?? '';
+
+        if (status == 'rented') {
+          final returnDate =
+              (data['rentalReturnDate'] as Timestamp?)?.toDate();
+          if (returnDate != null && returnDate.isBefore(now)) count++;
+        } else if (status == 'cleaning') {
+          final expected =
+              (data['cleaningExpectedDate'] as Timestamp?)?.toDate();
+          if (expected != null && expected.isBefore(now)) count++;
+        } else if (status == 'repair') {
+          final expected =
+              (data['repairExpectedDate'] as Timestamp?)?.toDate();
+          if (expected != null && expected.isBefore(now)) count++;
+        }
+      }
+      return count;
+    });
   }
 }

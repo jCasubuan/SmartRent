@@ -265,4 +265,61 @@ class GownService {
       return [];
     }
   }
+
+  // ── Repair management ──────────────────────────────────────────────────────
+
+  /// Sets a gown to 'repair' status with start and expected completion dates.
+  static Future<bool> sendToRepair({
+    required String gownId,
+    required DateTime startDate,
+    required DateTime expectedDate,
+  }) async {
+    try {
+      await _collection.doc(gownId).update({
+        'status': 'repair',
+        'repairStartDate': Timestamp.fromDate(startDate),
+        'repairExpectedDate': Timestamp.fromDate(expectedDate),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('[GownService.sendToRepair] $e');
+      return false;
+    }
+  }
+
+  /// Marks a repair gown as available and clears repair dates.
+  static Future<bool> markRepairDone(String gownId) async {
+    try {
+      await _collection.doc(gownId).update({
+        'status': 'available',
+        'repairStartDate': FieldValue.delete(),
+        'repairExpectedDate': FieldValue.delete(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('[GownService.markRepairDone] $e');
+      return false;
+    }
+  }
+
+  /// Returns all gowns currently in repair status with their repair dates.
+  static Future<List<Map<String, dynamic>>> getRepairGownsWithDates() async {
+    try {
+      final snapshot =
+          await _collection.where('status', isEqualTo: 'repair').get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'gown': GownModel.fromFirestore(doc),
+          'repairStartDate':
+              (data['repairStartDate'] as Timestamp?)?.toDate(),
+          'repairExpectedDate':
+              (data['repairExpectedDate'] as Timestamp?)?.toDate(),
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('[GownService.getRepairGownsWithDates] $e');
+      return [];
+    }
+  }
 }

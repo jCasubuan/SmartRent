@@ -1,18 +1,32 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:smart_rent/core/utils/memory_cache.dart';
 import '../core/models/category_model.dart';
 
 class CategoryService {
   static final _collection =
       FirebaseFirestore.instance.collection('categories');
 
+  /// In-memory cache for categories — avoids repeated Firestore reads.
+  /// Expires after 5 minutes.
+  static final _cache = MemoryCache<List<CategoryModel>>(
+    ttl: const Duration(minutes: 5),
+  );
+
   /// Fetches all categories ordered by the [order] field.
+  /// Returns cached data if available and not expired.
   static Future<List<CategoryModel>> getCategories() async {
+    // Return cached if valid
+    final cached = _cache.get();
+    if (cached != null) return cached;
+
     try {
       final snapshot = await _collection.orderBy('order').get();
-      return snapshot.docs
+      final categories = snapshot.docs
           .map((doc) => CategoryModel.fromFirestore(doc))
           .toList();
+      _cache.set(categories);
+      return categories;
     } on FirebaseException catch (e) {
       debugPrint('[CategoryService.getCategories] $e');
       if (e.code == 'unavailable') rethrow;
@@ -24,6 +38,7 @@ class CategoryService {
   }
 
   /// Adds a new category and returns the created [CategoryModel], or null on failure.
+  /// Clears the cache so the next read picks up the new category.
   static Future<CategoryModel?> addCategory(String name) async {
     try {
       final snapshot = await _collection.get();
@@ -35,17 +50,23 @@ class CategoryService {
       });
 
       final doc = await docRef.get();
-      return CategoryModel.fromFirestore(doc);
+      final newCategory = CategoryModel.fromFirestore(doc);
+
+      // Clear cache so next getCategories() fetches fresh data
+      _cache.clear();
+
+      return newCategory;
     } catch (e) {
       debugPrint('[CategoryService.addCategory] $e');
       return null;
     }
   }
 
-  /// Deletes a category by [categoryId].
+  /// Deletes a category by [categoryId]. Clears cache.
   static Future<bool> deleteCategory(String categoryId) async {
     try {
       await _collection.doc(categoryId).delete();
+      _cache.clear();
       return true;
     } catch (e) {
       debugPrint('[CategoryService.deleteCategory] $e');

@@ -6,7 +6,9 @@ import 'package:smart_rent/screens/admin/cleaning/cleaning_screen.dart';
 import 'package:smart_rent/screens/admin/customers/customer_list_screen.dart';
 import 'package:smart_rent/screens/admin/gowns/add_gown_screen.dart';
 import 'package:smart_rent/screens/admin/gowns/inventory_screen.dart';
+import 'package:smart_rent/screens/admin/overdue/overdue_screen.dart';
 import 'package:smart_rent/screens/admin/rented/rented_screen.dart';
+import 'package:smart_rent/screens/admin/repair/repair_screen.dart';
 import 'package:smart_rent/services/stats_service.dart';
 import 'package:smart_rent/core/widgets/analytics_card.dart';
 
@@ -96,9 +98,11 @@ class DashboardTab extends StatelessWidget {
               ActionCard(
                 label: 'Overdue',
                 icon: Image.asset('assets/icons/overdue.png', height: 50, width: 50),
-                onTap: () {
-                  // TODO: navigate to overdue list
-                },
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const OverdueScreen()),
+                ),
               ),
               ActionCard(
                 label: 'Cleaning',
@@ -116,6 +120,16 @@ class DashboardTab extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (_) => const RentedScreen()),
+                ),
+              ),
+              ActionCard(
+                label: 'Repair',
+                icon: const Icon(Icons.build_outlined,
+                    size: 50, color: AppColors.statusRepair),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const RepairScreen()),
                 ),
               ),
               ActionCard(

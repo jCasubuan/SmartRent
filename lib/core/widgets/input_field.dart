@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 
 /// A styled [TextFormField] used across auth and form screens.
 ///
 /// Supports prefix icon, suffix icon, obscure text, keyboard type,
-/// and a validator. Error borders use [AppColors.error].
+/// input formatters, max length, and a validator. Error borders use [AppColors.error].
 class InputField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
@@ -13,6 +14,9 @@ class InputField extends StatelessWidget {
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
+  final TextCapitalization textCapitalization;
 
   const InputField({
     super.key,
@@ -23,6 +27,9 @@ class InputField extends StatelessWidget {
     this.suffixIcon,
     this.keyboardType,
     this.validator,
+    this.inputFormatters,
+    this.maxLength,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -34,12 +41,16 @@ class InputField extends StatelessWidget {
       enableSuggestions: false,
       autocorrect: false,
       validator: validator,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      textCapitalization: textCapitalization,
       style: const TextStyle(fontSize: 14, color: AppColors.textDark),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
         prefixIcon: Icon(prefixIcon, color: AppColors.textLight, size: 20),
         suffixIcon: suffixIcon,
+        counterText: '',
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         enabledBorder: OutlineInputBorder(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
@@ -251,6 +252,11 @@ class _SigninScreenState extends State<SigninScreen> {
                         hint: 'example@gmail.com',
                         prefixIcon: Icons.mail_outline,
                         keyboardType: TextInputType.emailAddress,
+                        maxLength: 100,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'[a-zA-Z0-9@._\-+]')),
+                        ],
                         validator: _controller.validateEmail,
                       ),
 

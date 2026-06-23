@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smart_rent/screens/splash/splash_screen.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'firebase_options.dart';
@@ -8,6 +9,12 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Enable Firestore offline persistence with a 40MB cache limit.
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: 40 * 1024 * 1024, // 40 MB
     );
 
     // ── DEV SHORTCUT ────────────────────────────────────────────────────────

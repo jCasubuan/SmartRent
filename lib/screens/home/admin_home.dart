@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/widgets/in_app_notification_banner.dart';
+import 'package:smart_rent/screens/admin/overdue/overdue_screen.dart';
+import 'package:smart_rent/services/gown_service.dart';
 import 'package:smart_rent/services/rental_service.dart';
 import 'admin_tabs/dashboard_tab.dart';
 import 'admin_tabs/inbox_tab.dart';
@@ -16,6 +20,8 @@ class AdminHome extends StatefulWidget {
 
 class _AdminHomeState extends State<AdminHome> {
   int _currentIndex = 0;
+  StreamSubscription? _pendingSub;
+  int _lastPendingCount = -1;
 
   final List<Widget> _tabs = const [
     DashboardTab(),
@@ -24,6 +30,118 @@ class _AdminHomeState extends State<AdminHome> {
     ReportsTab(),
     AdminProfileTab(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _listenForNewRequests();
+    _checkOverdueItems();
+  }
+
+  @override
+  void dispose() {
+    _pendingSub?.cancel();
+    super.dispose();
+  }
+
+  /// Checks for overdue rentals, cleaning, and repair gowns on app open.
+  /// Shows a banner if any are found.
+  Future<void> _checkOverdueItems() async {
+    // Small delay to let the UI build first
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    final now = DateTime.now();
+    int overdueRentals = 0;
+    int overdueCleaning = 0;
+    int overdueRepair = 0;
+
+    try {
+      // Check overdue rentals
+      final rentals = await RentalService.pickedUpRentalsStream().first;
+      overdueRentals = rentals.where((r) => r.returnDate.isBefore(now)).length;
+
+      // Check overdue cleaning
+      final cleaningGowns = await GownService.getCleaningGownsWithDates();
+      overdueCleaning = cleaningGowns.where((entry) {
+        final expected = entry['cleaningExpectedDate'] as DateTime?;
+        return expected != null && expected.isBefore(now);
+      }).length;
+
+      // Check overdue repair
+      final repairGowns = await GownService.getRepairGownsWithDates();
+      overdueRepair = repairGowns.where((entry) {
+        final expected = entry['repairExpectedDate'] as DateTime?;
+        return expected != null && expected.isBefore(now);
+      }).length;
+    } catch (e) {
+      debugPrint('[AdminHome._checkOverdueItems] $e');
+      return;
+    }
+
+    final total = overdueRentals + overdueCleaning + overdueRepair;
+    if (total == 0 || !mounted) return;
+
+    // Build message
+    final parts = <String>[];
+    if (overdueRentals > 0) {
+      parts.add('$overdueRentals rental${overdueRentals > 1 ? 's' : ''}');
+    }
+    if (overdueCleaning > 0) {
+      parts.add('$overdueCleaning cleaning');
+    }
+    if (overdueRepair > 0) {
+      parts.add('$overdueRepair repair');
+    }
+
+    InAppNotificationBanner.show(
+      context,
+      title: 'Overdue Items',
+      body: '${parts.join(', ')} past expected date. Tap to view.',
+      icon: Icons.warning_amber_outlined,
+      iconColor: AppColors.error,
+      duration: const Duration(seconds: 5),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const OverdueScreen(),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Listens to pending rental requests stream and shows a banner when a new one arrives.
+  void _listenForNewRequests() {
+    _pendingSub = RentalService.pendingRequestsStream().listen((requests) {
+      final count = requests.length;
+
+      // Skip initial load
+      if (_lastPendingCount == -1) {
+        _lastPendingCount = count;
+        return;
+      }
+
+      if (count > _lastPendingCount && requests.isNotEmpty) {
+        // Find the newest request (first in list, sorted newest-first)
+        final latest = requests.first;
+
+        if (mounted) {
+          InAppNotificationBanner.show(
+            context,
+            title: 'New Rental Request',
+            body: '${latest.customerName} wants to rent "${latest.gownName}"',
+            icon: Icons.inbox_outlined,
+            iconColor: AppColors.primary,
+            onTap: () => setState(() => _currentIndex = 1), // Go to Inbox
+          );
+        }
+      }
+
+      _lastPendingCount = count;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

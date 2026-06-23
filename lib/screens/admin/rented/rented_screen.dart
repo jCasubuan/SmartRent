@@ -383,6 +383,39 @@ class _RentedCardState extends State<_RentedCard> {
       return;
     }
 
+    if (choice == 'repair') {
+      final repairDates = await _showRepairDateDialog();
+      if (repairDates == null || !mounted) return;
+
+      setState(() => _isProcessing = true);
+      final rentalSuccess = await RentalService.completeRental(
+        widget.rental.id,
+        widget.rental.gownId,
+        nextGownStatus: 'repair',
+      );
+
+      if (!rentalSuccess) {
+        if (mounted) {
+          setState(() => _isProcessing = false);
+          _showError('Failed to update. Please try again.');
+        }
+        return;
+      }
+
+      await GownService.sendToRepair(
+        gownId: widget.rental.gownId,
+        startDate: repairDates.start,
+        expectedDate: repairDates.expected,
+      );
+
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        _showSuccess(
+            '${widget.rental.gownName} sent to repair. Expected back by ${_formatDate(repairDates.expected)}.');
+      }
+      return;
+    }
+
     setState(() => _isProcessing = true);
     final success = await RentalService.completeRental(
       widget.rental.id,
@@ -392,11 +425,7 @@ class _RentedCardState extends State<_RentedCard> {
     if (mounted) {
       setState(() => _isProcessing = false);
       if (success) {
-        final label = switch (choice) {
-          'repair' => 'sent to repair',
-          _ => 'marked as available',
-        };
-        _showSuccess('${widget.rental.gownName} returned and $label.');
+        _showSuccess('${widget.rental.gownName} returned and marked as available.');
       } else {
         _showError('Failed to update. Please try again.');
       }
@@ -540,6 +569,157 @@ class _RentedCardState extends State<_RentedCard> {
                   Navigator.pop(ctx, (start: today, expected: expectedDate)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.statusCleaning,
+                foregroundColor: AppColors.defaultForeground,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Confirm',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<({DateTime start, DateTime expected})?> _showRepairDateDialog() async {
+    DateTime expectedDate = DateTime.now().add(const Duration(days: 5));
+    final today = DateTime.now();
+
+    return showDialog<({DateTime start, DateTime expected})>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.build_outlined,
+                  color: AppColors.statusRepair, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '"${widget.rental.gownName}" will be sent to repair',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textDark,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Start Date',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textLight,
+                      letterSpacing: 0.5)),
+              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceGrey,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined,
+                        size: 16, color: AppColors.textLight),
+                    const SizedBox(width: 8),
+                    Text(_formatDate(today),
+                        style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textMid,
+                            fontWeight: FontWeight.w500)),
+                    const Spacer(),
+                    const Text('Today',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textLight,
+                            fontStyle: FontStyle.italic)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Expected Completion',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textLight,
+                      letterSpacing: 0.5)),
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: expectedDate,
+                    firstDate: today.add(const Duration(days: 1)),
+                    lastDate: today.add(const Duration(days: 90)),
+                    builder: (context, child) => Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: const ColorScheme.light(
+                          primary: AppColors.statusRepair,
+                          onPrimary: AppColors.defaultForeground,
+                          onSurface: AppColors.textDark,
+                        ),
+                      ),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) {
+                    setDialogState(() => expectedDate = picked);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.statusRepair),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today_outlined,
+                          size: 16, color: AppColors.statusRepair),
+                      const SizedBox(width: 8),
+                      Text(_formatDate(expectedDate),
+                          style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      const Icon(Icons.edit_outlined,
+                          size: 16, color: AppColors.statusRepair),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel',
+                  style: TextStyle(
+                      color: AppColors.textMid,
+                      fontWeight: FontWeight.w600)),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.pop(ctx, (start: today, expected: expectedDate)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.statusRepair,
                 foregroundColor: AppColors.defaultForeground,
                 elevation: 0,
                 shape: RoundedRectangleBorder(

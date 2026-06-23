@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
 import 'package:smart_rent/screens/client/rental_request_screen.dart';
@@ -28,10 +30,42 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
   int _currentImageIndex = 0;
   late bool _isBookmarked;
 
+  /// Fallback estimated availability date fetched from the active rental,
+  /// used when the gown doc itself doesn't have the date field set.
+  DateTime? _fallbackReturnDate;
+
   @override
   void initState() {
     super.initState();
     _isBookmarked = widget.isBookmarked;
+    _fetchFallbackDate();
+  }
+
+  /// If the gown is non-available and missing its expected date on the doc,
+  /// look up the active rental for this gown to get the return date.
+  Future<void> _fetchFallbackDate() async {
+    final gown = widget.gown;
+    // Only fetch if the gown is rented but missing the date on its own doc.
+    if (gown.status != 'rented' || gown.rentalReturnDate != null) return;
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('rentals')
+          .where('gownId', isEqualTo: gown.id)
+          .where('status', isEqualTo: 'picked_up')
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty && mounted) {
+        final data = snapshot.docs.first.data();
+        final returnDate = (data['returnDate'] as Timestamp?)?.toDate();
+        if (returnDate != null) {
+          setState(() => _fallbackReturnDate = returnDate);
+        }
+      }
+    } catch (e) {
+      debugPrint('[ClientGownDetailScreen._fetchFallbackDate] $e');
+    }
   }
 
   @override
@@ -52,6 +86,24 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
       await UserService.removeBookmark(widget.gown.id);
     } else {
       await UserService.addBookmark(widget.gown.id);
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            wasBookmarked
+                ? 'Removed from bookmarks'
+                : 'Added to bookmarks',
+          ),
+          backgroundColor: AppColors.textDark,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
 
@@ -221,12 +273,11 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
                               itemBuilder: (context, index) =>
                                   GestureDetector(
                                 onTap: () => _openImageViewer(index),
-                                child: Image.network(
-                                  images[index],
+                                child: CachedImage(
+                                  imageUrl: images[index],
                                   fit: BoxFit.contain,
                                   width: double.infinity,
-                                  errorBuilder: (_, _, _) =>
-                                      _imagePlaceholder(),
+                                  errorWidget: _imagePlaceholder(),
                                 ),
                               ),
                             )
@@ -368,8 +419,11 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
                         if (!isAvailable && gown.status != 'reserved') ...[
                           const SizedBox(width: 8),
                           if (gown.status == 'rented' &&
-                              gown.rentalReturnDate != null)
-                            _EstimatedDateChip(date: gown.rentalReturnDate!)
+                              (gown.rentalReturnDate != null ||
+                                  _fallbackReturnDate != null))
+                            _EstimatedDateChip(
+                                date: gown.rentalReturnDate ??
+                                    _fallbackReturnDate!)
                           else if (gown.status == 'cleaning' &&
                               gown.cleaningExpectedDate != null)
                             _EstimatedDateChip(
@@ -686,10 +740,10 @@ class _ZoomablePageState extends State<_ZoomablePage> {
           }
         },
         child: Center(
-          child: Image.network(
-            widget.imageUrl,
+          child: CachedImage(
+            imageUrl: widget.imageUrl,
             fit: BoxFit.contain,
-            errorBuilder: (_, _, _) => const Icon(
+            errorWidget: const Icon(
               Icons.broken_image_outlined,
               color: AppColors.border,
               size: 60,

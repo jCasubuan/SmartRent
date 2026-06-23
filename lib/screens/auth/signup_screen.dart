@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
@@ -174,6 +175,12 @@ class _SignupScreenState extends State<SignupScreen> {
                               controller: _nameController,
                               hint: 'Full Name',
                               prefixIcon: Icons.person_outline,
+                              maxLength: 50,
+                              textCapitalization: TextCapitalization.words,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r"[a-zA-ZÀ-ÿ\s\-']")),
+                              ],
                               validator: _controller.validateName,
                             ),
 
@@ -187,6 +194,11 @@ class _SignupScreenState extends State<SignupScreen> {
                               hint: 'example@gmail.com',
                               prefixIcon: Icons.mail_outline,
                               keyboardType: TextInputType.emailAddress,
+                              maxLength: 100,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'[a-zA-Z0-9@._\-+]')),
+                              ],
                               validator: _controller.validateEmail,
                             ),
 

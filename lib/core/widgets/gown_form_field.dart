@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 
 /// A styled [TextFormField] used in admin gown forms (Add / Edit).
@@ -11,6 +12,9 @@ class GownFormField extends StatelessWidget {
   final IconData? prefixIcon;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
+  final TextCapitalization textCapitalization;
 
   const GownFormField({
     super.key,
@@ -19,6 +23,9 @@ class GownFormField extends StatelessWidget {
     this.prefixIcon,
     this.keyboardType,
     this.validator,
+    this.inputFormatters,
+    this.maxLength,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -27,10 +34,14 @@ class GownFormField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      textCapitalization: textCapitalization,
       style: const TextStyle(fontSize: 14, color: AppColors.textDark),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.inputHint, fontSize: 14),
+        counterText: '',
         prefixIcon: prefixIcon != null
             ? Icon(prefixIcon, color: AppColors.inputHint, size: 20)
             : null,

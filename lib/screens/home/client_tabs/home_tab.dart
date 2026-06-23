@@ -5,6 +5,7 @@ import 'package:smart_rent/core/models/category_model.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/widgets/gown_card.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
+import 'package:smart_rent/screens/client/bookmarks_screen.dart';
 import 'package:smart_rent/screens/client/gown_detail_screen.dart';
 import 'package:smart_rent/services/category_service.dart';
 import 'package:smart_rent/services/gown_service.dart';
@@ -25,14 +26,7 @@ class _HomeTabState extends State<HomeTab> {
   Set<String> _bookmarkedIds = {};
   bool _categoriesLoading = true;
 
-  final List<String> _filters = [
-    'All',
-    'Popular',
-    'Best Offers',
-    'Premium Gowns',
-  ];
-
-  bool get _isSearching => _searchController.text.isNotEmpty;
+  bool get _isSearching => _searchController.text.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -55,6 +49,11 @@ class _HomeTabState extends State<HomeTab> {
         _categories = cats;
         _bookmarkedIds = Set<String>.from(bookmarks);
         _categoriesLoading = false;
+        // Reset filter if selected category no longer exists
+        if (_selectedFilter != 'All' &&
+            !cats.any((c) => c.name == _selectedFilter)) {
+          _selectedFilter = 'All';
+        }
       });
     }
   }
@@ -62,6 +61,14 @@ class _HomeTabState extends State<HomeTab> {
   Future<void> _onRefresh() async {
     _searchController.clear();
     await _loadCategories();
+  }
+
+  /// Lightweight refresh — only reloads bookmark IDs without touching categories.
+  Future<void> _refreshBookmarks() async {
+    final bookmarks = await UserService.getBookmarks();
+    if (mounted) {
+      setState(() => _bookmarkedIds = Set<String>.from(bookmarks));
+    }
   }
 
   List<GownModel> _gownsForCategory(List<GownModel> allGowns, String categoryName) {
@@ -72,7 +79,10 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   List<GownModel> _searchResults(List<GownModel> allGowns) {
-    final query = _searchController.text.toLowerCase().trim();
+    final raw = _searchController.text.trim();
+    // Sanitize: strip non-alphanumeric except spaces, hyphens, apostrophes
+    final sanitized = raw.replaceAll(RegExp(r"[^\w\s\-']"), '');
+    final query = sanitized.toLowerCase().trim();
     if (query.isEmpty) return [];
     return allGowns.where((g) {
       return g.name.toLowerCase().contains(query) ||
@@ -90,10 +100,29 @@ class _HomeTabState extends State<HomeTab> {
         _bookmarkedIds.add(gownId);
       }
     });
+
     if (isCurrentlyBookmarked) {
       await UserService.removeBookmark(gownId);
     } else {
       await UserService.addBookmark(gownId);
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isCurrentlyBookmarked
+                ? 'Removed from bookmarks'
+                : 'Added to bookmarks',
+          ),
+          backgroundColor: AppColors.textDark,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
 
@@ -114,15 +143,18 @@ class _HomeTabState extends State<HomeTab> {
     return GownCard(
       gown: gown,
       isBookmarked: _bookmarkedIds.contains(gown.id),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ClientGownDetailScreen(
-            gown: gown,
-            isBookmarked: _bookmarkedIds.contains(gown.id),
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ClientGownDetailScreen(
+              gown: gown,
+              isBookmarked: _bookmarkedIds.contains(gown.id),
+            ),
           ),
-        ),
-      ),
+        );
+        _refreshBookmarks();
+      },
       onBookmarkTap: isLoggedIn
           ? () => _toggleBookmark(gown.id)
           : () => _showLoginPrompt(context, 'bookmark this gown'),
@@ -162,6 +194,7 @@ class _HomeTabState extends State<HomeTab> {
                           ),
                           child: TextField(
                             controller: _searchController,
+                            maxLength: 50,
                             style: const TextStyle(
                               fontSize: 14,
                               color: AppColors.textDark,
@@ -189,6 +222,7 @@ class _HomeTabState extends State<HomeTab> {
                                     )
                                   : null,
                               border: InputBorder.none,
+                              counterText: '',
                               contentPadding:
                                   const EdgeInsets.symmetric(vertical: 12),
                             ),
@@ -198,8 +232,14 @@ class _HomeTabState extends State<HomeTab> {
                       const SizedBox(width: 10),
                       if (isLoggedIn)
                         IconButton(
-                          onPressed: () {
-                            // TODO: navigate to bookmarks tab/page
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BookmarksScreen(),
+                              ),
+                            );
+                            _refreshBookmarks();
                           },
                           icon: const Icon(
                             Icons.bookmark_border,
@@ -269,10 +309,12 @@ class _HomeTabState extends State<HomeTab> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _filters.length,
+                      itemCount: _categories.length + 1,
                       separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, index) {
-                        final filter = _filters[index];
+                        final filter = index == 0
+                            ? 'All'
+                            : _categories[index - 1].name;
                         final isSelected = _selectedFilter == filter;
                         return GestureDetector(
                           onTap: () =>
@@ -420,6 +462,40 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                 )
 
+              // Specific category selected — flat grid
+              else if (_selectedFilter != 'All')
+                () {
+                  final filtered = _gownsForCategory(allGowns, _selectedFilter);
+                  if (filtered.isEmpty) {
+                    return const SliverFillRemaining(
+                      child: Center(
+                        child: Text(
+                          'No gowns in this category yet.',
+                          style: TextStyle(fontSize: 14, color: AppColors.textLight),
+                        ),
+                      ),
+                    );
+                  }
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        mainAxisExtent: 270,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildGownCard(
+                            context, filtered[index], isLoggedIn),
+                        childCount: filtered.length,
+                      ),
+                    ),
+                  );
+                }()
+
+              // "All" selected — grouped by category with headers
               else
                 SliverList(
                   delegate: SliverChildBuilderDelegate(

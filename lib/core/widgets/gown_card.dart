@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/widgets/cached_image.dart';
 
 /// Universal gown card used in both the admin inventory grid and the
 /// client home tab grid.
@@ -70,12 +71,12 @@ class GownCard extends StatelessWidget {
                     height: 160,
                     color: AppColors.surfaceGrey,
                     child: gown.imageUrls.isNotEmpty
-                        ? Image.network(
-                            gown.imageUrls.first,
+                        ? CachedImage(
+                            imageUrl: gown.imageUrls.first,
                             width: double.infinity,
                             height: 160,
                             fit: BoxFit.contain,
-                            errorBuilder: (_, _, _) => _placeholder(),
+                            errorWidget: _placeholder(),
                           )
                         : _placeholder(),
                   ),
@@ -190,6 +191,8 @@ class GownCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+
+
                 ],
               ),
             ),

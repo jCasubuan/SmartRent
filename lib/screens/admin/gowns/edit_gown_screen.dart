@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
@@ -34,14 +35,8 @@ class _EditGownScreenState extends State<EditGownScreen> {
   CategoryModel? _selectedCategory;
   bool _loadingCategories = true;
 
-  // Status
+  // Status — preserved from current gown, no longer editable via UI
   late String _selectedStatus;
-  final List<String> _statusOptions = [
-    'available',
-    'rented',
-    'cleaning',
-    'repair',
-  ];
 
   // Measurements — pre-filled from existing gown, admin can add more
   late final List<Map<String, dynamic>> _measurements;
@@ -226,8 +221,14 @@ class _EditGownScreenState extends State<EditGownScreen> {
           content: TextField(
             controller: controller,
             autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            maxLength: 30,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\-]")),
+            ],
             decoration: const InputDecoration(
               hintText: 'e.g. Thigh Circumference',
+              counterText: '',
             ),
           ),
           actions: [
@@ -238,7 +239,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
             ),
             TextButton(
               onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
+                if (controller.text.trim().length >= 2) {
                   setState(() {
                     _measurements.add({
                       'label': controller.text.trim(),
@@ -267,8 +268,14 @@ class _EditGownScreenState extends State<EditGownScreen> {
           content: TextField(
             controller: controller,
             autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            maxLength: 30,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\-]")),
+            ],
             decoration: const InputDecoration(
               hintText: 'e.g. Wedding',
+              counterText: '',
             ),
           ),
           actions: [
@@ -280,7 +287,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
             TextButton(
               onPressed: () async {
                 final text = controller.text.trim();
-                if (text.isEmpty) return;
+                if (text.isEmpty || text.length < 2) return;
 
                 Navigator.pop(context);
                 setState(() => _loadingCategories = true);
@@ -361,18 +368,6 @@ class _EditGownScreenState extends State<EditGownScreen> {
     );
   }
 
-  String _statusLabel(String status) {
-    return switch (status) {
-      'available' => 'Available',
-      'rented'    => 'Rented',
-      'cleaning'  => 'Cleaning',
-      'repair'    => 'Repair',
-      _           => status,
-    };
-  }
-
-  Color _statusColor(String status) => AppColors.gownStatusColor(status);
-
   @override
   Widget build(BuildContext context) {
     final totalImages = _retainedImageUrls.length + _newImages.length;
@@ -430,15 +425,27 @@ class _EditGownScreenState extends State<EditGownScreen> {
                 const SizedBox(height: 20),
 
                 // Gown Name
-                FieldLabel(label: 'GOWN NAME'),
+                FieldLabel(label: 'GOWN NAME', isRequired: true),
                 const SizedBox(height: 8),
                 GownFormField(
                   controller: _nameController,
                   hint: 'Enter gown name',
                   prefixIcon: Icons.checkroom_outlined,
-                  validator: (val) => val == null || val.trim().isEmpty
-                      ? 'Please enter gown name'
-                      : null,
+                  maxLength: 50,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-Z0-9\s\-']")),
+                  ],
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Please enter gown name';
+                    }
+                    if (val.trim().length < 2) {
+                      return 'Name must be at least 2 characters';
+                    }
+                    return null;
+                  },
                 ),
 
                 const SizedBox(height: 20),
@@ -452,7 +459,7 @@ class _EditGownScreenState extends State<EditGownScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          FieldLabel(label: 'CATEGORY'),
+                          FieldLabel(label: 'CATEGORY', isRequired: true),
                           const SizedBox(height: 8),
                           Container(
                             height: 48,
@@ -548,15 +555,23 @@ class _EditGownScreenState extends State<EditGownScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          FieldLabel(label: 'COLOR'),
+                          FieldLabel(label: 'COLOR', isRequired: true),
                           const SizedBox(height: 8),
                           GownFormField(
                             controller: _colorController,
                             hint: 'e.g. White',
-                            validator: (val) =>
-                                val == null || val.trim().isEmpty
-                                    ? 'Required'
-                                    : null,
+                            maxLength: 30,
+                            textCapitalization: TextCapitalization.words,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r"[a-zA-Z\s\-]")),
+                            ],
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Required';
+                              }
+                              return null;
+                            },
                           ),
                         ],
                       ),
@@ -566,71 +581,24 @@ class _EditGownScreenState extends State<EditGownScreen> {
 
                 const SizedBox(height: 20),
 
-                // Status
-                FieldLabel(label: 'STATUS'),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.border),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      value: _selectedStatus,
-                      icon: const Icon(Icons.keyboard_arrow_down,
-                          color: AppColors.textLight),
-                      items: _statusOptions.map((status) {
-                        return DropdownMenuItem(
-                          value: status,
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: _statusColor(status),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _statusLabel(status),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textDark,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _selectedStatus = value);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
                 // Price
-                FieldLabel(label: 'RENTAL PRICE (₱)'),
+                FieldLabel(label: 'RENTAL PRICE (₱)', isRequired: true),
                 const SizedBox(height: 8),
                 GownFormField(
                   controller: _priceController,
                   hint: 'e.g. 5000',
                   keyboardType: TextInputType.number,
                   prefixIcon: Icons.payments_outlined,
+                  maxLength: 10,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
                       return 'Please enter rental price';
                     }
-                    if (double.tryParse(val.trim()) == null) {
+                    final price = double.tryParse(val.trim());
+                    if (price == null || price <= 0) {
                       return 'Please enter a valid price';
                     }
                     return null;
@@ -645,12 +613,18 @@ class _EditGownScreenState extends State<EditGownScreen> {
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 4,
+                  maxLength: 300,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(
+                        RegExp(r'[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}]', unicode: true)),
+                  ],
                   style: const TextStyle(
                       fontSize: 14, color: AppColors.textDark),
                   decoration: InputDecoration(
                     hintText: 'Description',
                     hintStyle: const TextStyle(
                         color: AppColors.inputHint, fontSize: 14),
+                    counterText: '',
                     contentPadding: const EdgeInsets.all(16),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -711,6 +685,11 @@ class _EditGownScreenState extends State<EditGownScreen> {
                       controller:
                           m['controller'] as TextEditingController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[\d.]')),
+                        LengthLimitingTextInputFormatter(6),
+                      ],
                       style: const TextStyle(
                           fontSize: 13, color: AppColors.textDark),
                       decoration: InputDecoration(

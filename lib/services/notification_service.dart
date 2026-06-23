@@ -127,4 +127,67 @@ class NotificationService {
       debugPrint('[NotificationService.markAllRead] $e');
     }
   }
+
+  // ── Delete ─────────────────────────────────────────────────────────────────
+
+  /// Deletes a single notification document.
+  static Future<bool> deleteNotification(
+      String customerId, String notifId) async {
+    try {
+      await _users
+          .doc(customerId)
+          .collection('notifications')
+          .doc(notifId)
+          .delete();
+      return true;
+    } catch (e) {
+      debugPrint('[NotificationService.deleteNotification] $e');
+      return false;
+    }
+  }
+
+  // ── Overdue reminder ───────────────────────────────────────────────────────
+
+  /// Sends an overdue reminder notification if one hasn't already been sent
+  /// for this rental. Uses rentalId + type='overdue' to deduplicate.
+  static Future<void> sendOverdueReminderIfNeeded({
+    required String customerId,
+    required String rentalId,
+    required String gownName,
+    required DateTime returnDate,
+  }) async {
+    try {
+      // Check if already sent
+      final existing = await _users
+          .doc(customerId)
+          .collection('notifications')
+          .where('rentalId', isEqualTo: rentalId)
+          .where('type', isEqualTo: 'overdue')
+          .limit(1)
+          .get();
+
+      if (existing.docs.isNotEmpty) return; // Already notified
+
+      final overdueDays = DateTime.now().difference(returnDate).inDays;
+      final dayText = overdueDays == 0
+          ? 'today'
+          : '$overdueDays day${overdueDays > 1 ? 's' : ''} ago';
+
+      await _users
+          .doc(customerId)
+          .collection('notifications')
+          .add({
+        'title': 'Gown return overdue ⚠️',
+        'body': 'Your rental of "$gownName" was due $dayText. '
+            'Please return it to the shop as soon as possible to avoid additional charges (₱500/day).',
+        'type': 'overdue',
+        'rentalId': rentalId,
+        'gownName': gownName,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('[NotificationService.sendOverdueReminderIfNeeded] $e');
+    }
+  }
 }

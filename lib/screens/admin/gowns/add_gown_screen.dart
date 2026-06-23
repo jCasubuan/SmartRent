@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
@@ -262,8 +263,14 @@ void _showPermissionDialog() {
           content: TextField(
             controller: controller,
             autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            maxLength: 30,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\-]")),
+            ],
             decoration: const InputDecoration(
               hintText: 'e.g. Thigh Circumference',
+              counterText: '',
             ),
           ),
           actions: [
@@ -274,7 +281,7 @@ void _showPermissionDialog() {
             ),
             TextButton(
               onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
+                if (controller.text.trim().length >= 2) {
                   setState(() {
                     _measurements.add({
                       'label': controller.text.trim(),
@@ -304,8 +311,14 @@ void _showPermissionDialog() {
           content: TextField(
             controller: controller,
             autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            maxLength: 30,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\-]")),
+            ],
             decoration: const InputDecoration(
               hintText: 'e.g. Wedding',
+              counterText: '',
             ),
           ),
           actions: [
@@ -317,7 +330,7 @@ void _showPermissionDialog() {
             TextButton(
               onPressed: () async {
                 final text = controller.text.trim();
-                if (text.isEmpty) return;
+                if (text.isEmpty || text.length < 2) return;
 
                 // Close dialog first
                 Navigator.pop(context);
@@ -429,15 +442,27 @@ void _showPermissionDialog() {
               children: [
 
                 // Gown Name
-                FieldLabel(label: 'GOWN NAME'),
+                FieldLabel(label: 'GOWN NAME', isRequired: true),
                 const SizedBox(height: 8),
                 GownFormField(
                   controller: _nameController,
                   hint: 'Enter gown name',
                   prefixIcon: Icons.checkroom_outlined,
-                  validator: (val) => val == null || val.trim().isEmpty
-                      ? 'Please enter gown name'
-                      : null,
+                  maxLength: 50,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-Z0-9\s\-']")),
+                  ],
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Please enter gown name';
+                    }
+                    if (val.trim().length < 2) {
+                      return 'Name must be at least 2 characters';
+                    }
+                    return null;
+                  },
                 ),
 
                 const SizedBox(height: 20),
@@ -451,7 +476,7 @@ void _showPermissionDialog() {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          FieldLabel(label: 'CATEGORY'),
+                          FieldLabel(label: 'CATEGORY', isRequired: true),
                           const SizedBox(height: 8),
                           // _loadingCategories
                           //     ? const SizedBox(
@@ -553,15 +578,23 @@ void _showPermissionDialog() {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          FieldLabel(label: 'COLOR'),
+                          FieldLabel(label: 'COLOR', isRequired: true),
                           const SizedBox(height: 8),
                           GownFormField(
                             controller: _colorController,
                             hint: 'e.g. White',
-                            validator: (val) =>
-                                val == null || val.trim().isEmpty
-                                    ? 'Required'
-                                    : null,
+                            maxLength: 30,
+                            textCapitalization: TextCapitalization.words,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r"[a-zA-Z\s\-]")),
+                            ],
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Required';
+                              }
+                              return null;
+                            },
                           ),
                         ],
                       ),
@@ -572,18 +605,23 @@ void _showPermissionDialog() {
                 const SizedBox(height: 20),
 
                 // Price
-                FieldLabel(label: 'RENTAL PRICE (₱)'),
+                FieldLabel(label: 'RENTAL PRICE (₱)', isRequired: true),
                 const SizedBox(height: 8),
                 GownFormField(
                   controller: _priceController,
                   hint: 'e.g. 5000',
                   keyboardType: TextInputType.number,
                   prefixIcon: Icons.payments_outlined,
+                  maxLength: 10,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
                       return 'Please enter rental price';
                     }
-                    if (double.tryParse(val.trim()) == null) {
+                    final price = double.tryParse(val.trim());
+                    if (price == null || price <= 0) {
                       return 'Please enter a valid price';
                     }
                     return null;
@@ -598,12 +636,18 @@ void _showPermissionDialog() {
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 4,
+                  maxLength: 300,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(
+                        RegExp(r'[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}]', unicode: true)),
+                  ],
                   style: const TextStyle(
                       fontSize: 14, color: AppColors.textDark),
                   decoration: InputDecoration(
                     hintText: 'Description',
                     hintStyle: const TextStyle(
                         color: AppColors.inputHint, fontSize: 14),
+                    counterText: '',
                     contentPadding: const EdgeInsets.all(16),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -664,6 +708,11 @@ void _showPermissionDialog() {
                       controller:
                           m['controller'] as TextEditingController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[\d.]')),
+                        LengthLimitingTextInputFormatter(6),
+                      ],
                       style: const TextStyle(
                           fontSize: 13, color: AppColors.textDark),
                       decoration: InputDecoration(

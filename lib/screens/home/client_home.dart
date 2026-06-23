@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/widgets/in_app_notification_banner.dart';
 import 'package:smart_rent/services/notification_service.dart';
+import 'package:smart_rent/services/rental_service.dart';
 import 'client_tabs/home_tab.dart';
 import 'client_tabs/transactions_tab.dart';
 import 'client_tabs/notifications_tab.dart';
@@ -17,6 +20,8 @@ class ClientHome extends StatefulWidget {
 class _ClientHomeState extends State<ClientHome> {
   int _currentIndex = 0;
   String? _photoUrl;
+  StreamSubscription? _notificationSub;
+  int _lastNotifCount = -1;
 
   final List<Widget> _tabs = const [
     HomeTab(),
@@ -29,12 +34,142 @@ class _ClientHomeState extends State<ClientHome> {
   void initState() {
     super.initState();
     _loadPhoto();
+    _checkOverdueRentals();
+    _listenForNewNotifications();
+  }
+
+  @override
+  void dispose() {
+    _notificationSub?.cancel();
+    super.dispose();
+  }
+
+  /// Listens to the notifications stream and shows a banner when a new one arrives.
+  void _listenForNewNotifications() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    _notificationSub =
+        NotificationService.notificationsStream(user.uid).listen(
+      (notifs) {
+        final count = notifs.length;
+
+        // Skip the initial load — only trigger on actual new notifications
+        if (_lastNotifCount == -1) {
+          _lastNotifCount = count;
+          return;
+        }
+
+        if (count > _lastNotifCount && notifs.isNotEmpty) {
+          final latest = notifs.first;
+          final title = latest['title'] as String? ?? '';
+          final body = latest['body'] as String? ?? '';
+          final type = latest['type'] as String? ?? '';
+
+          if (mounted && title.isNotEmpty) {
+            InAppNotificationBanner.show(
+              context,
+              title: title,
+              body: body,
+              icon: _iconForType(type),
+              iconColor: _colorForType(type),
+              onTap: () => setState(() => _currentIndex = 2),
+            );
+          }
+        }
+
+        _lastNotifCount = count;
+      },
+      onError: (e) {
+        debugPrint('[ClientHome._listenForNewNotifications] $e');
+      },
+    );
+  }
+
+  IconData _iconForType(String type) {
+    return switch (type) {
+      'approved'  => Icons.check_circle_outline,
+      'rejected'  => Icons.cancel_outlined,
+      'completed' => Icons.assignment_turned_in_outlined,
+      'overdue'   => Icons.warning_amber_outlined,
+      _           => Icons.notifications_outlined,
+    };
+  }
+
+  Color _colorForType(String type) {
+    return switch (type) {
+      'approved'  => AppColors.rentalApproved,
+      'rejected'  => AppColors.rentalDeclined,
+      'completed' => AppColors.rentalCompleted,
+      'overdue'   => AppColors.error,
+      _           => AppColors.primary,
+    };
   }
 
   void _loadPhoto() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && user.photoURL != null) {
       setState(() => _photoUrl = user.photoURL);
+    }
+  }
+
+  /// Checks if the customer has any overdue rentals and sends
+  /// a notification for each (deduplicated — only once per rental).
+  /// Also shows a banner immediately if there are overdue items.
+  Future<void> _checkOverdueRentals() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // Small delay to let UI build
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    try {
+      final rentals = await RentalService.customerRentalsStream(user.uid).first;
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      int overdueCount = 0;
+      String? firstOverdueGown;
+
+      for (final rental in rentals) {
+        if (rental.status != 'picked_up') continue;
+        final dueDate = DateTime(
+          rental.returnDate.year,
+          rental.returnDate.month,
+          rental.returnDate.day,
+        );
+        if (dueDate.isAfter(today)) continue;
+
+        overdueCount++;
+        firstOverdueGown ??= rental.gownName;
+
+        await NotificationService.sendOverdueReminderIfNeeded(
+          customerId: user.uid,
+          rentalId: rental.id,
+          gownName: rental.gownName,
+          returnDate: rental.returnDate,
+        );
+      }
+
+      // Show banner if there are overdue rentals
+      if (overdueCount > 0 && mounted) {
+        final body = overdueCount == 1
+            ? '"$firstOverdueGown" is past the return date. Please return it to avoid extra charges.'
+            : '$overdueCount gowns are past their return date. Please return them to avoid extra charges.';
+
+        InAppNotificationBanner.show(
+          context,
+          title: 'Return Overdue ⚠️',
+          body: body,
+          icon: Icons.warning_amber_outlined,
+          iconColor: AppColors.error,
+          duration: const Duration(seconds: 5),
+          onTap: () => setState(() => _currentIndex = 1), // Go to Transactions
+        );
+      }
+    } catch (e) {
+      debugPrint('[ClientHome._checkOverdueRentals] $e');
     }
   }
 

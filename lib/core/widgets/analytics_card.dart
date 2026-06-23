@@ -1,22 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/services/reports_service.dart';
 
-class AnalyticsCard extends StatelessWidget {
-  // Chart widget to render — pass any chart here in future sprint
-  final Widget? chart;
+/// Dashboard analytics summary card.
+/// Shows this month's revenue and completed rental count.
+/// Tapping navigates to the full Reports tab.
+class AnalyticsCard extends StatefulWidget {
+  const AnalyticsCard({super.key});
 
-  // Title of the analytics section
-  final String title;
+  @override
+  State<AnalyticsCard> createState() => _AnalyticsCardState();
+}
 
-  // Optional subtitle or date range label
-  final String? subtitle;
+class _AnalyticsCardState extends State<AnalyticsCard> {
+  ReportData? _data;
+  bool _isLoading = true;
 
-  const AnalyticsCard({
-    super.key,
-    this.chart,
-    this.title = 'Rental Overview',
-    this.subtitle,
-  });
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final data = await ReportsService.getThisMonthSummary();
+    if (mounted) {
+      setState(() {
+        _data = data;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,60 +49,128 @@ class AnalyticsCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Card header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
-                ),
+      child: _isLoading
+          ? const SizedBox(
+              height: 80,
+              child: Center(
+                child: CircularProgressIndicator(
+                    color: AppColors.primary, strokeWidth: 2.5),
               ),
-              if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textLight,
-                  ),
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Chart area — shows placeholder if no chart provided
-          SizedBox(
-            width: double.infinity,
-            height: 200,
-            child: chart ??
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.bar_chart_outlined,
-                      size: 48,
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 12),
                     const Text(
-                      'Analytics coming soon',
+                      'This Month',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    Text(
+                      _currentMonthLabel(),
+                      style: const TextStyle(
+                        fontSize: 11,
                         color: AppColors.textLight,
                       ),
                     ),
                   ],
                 ),
+
+                const SizedBox(height: 16),
+
+                // Revenue + Completed row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MiniMetric(
+                        label: 'Revenue',
+                        value: '₱${PriceFormatter.format(_data?.totalRevenue ?? 0)}',
+                        icon: Icons.account_balance_wallet_outlined,
+                        color: AppColors.rentalApproved,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _MiniMetric(
+                        label: 'Completed',
+                        value: '${_data?.completedRentals ?? 0}',
+                        icon: Icons.check_circle_outline,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _MiniMetric(
+                        label: 'Penalties',
+                        value: '₱${PriceFormatter.format(_data?.totalPenalties ?? 0)}',
+                        icon: Icons.warning_amber_outlined,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+    );
+  }
+
+  String _currentMonthLabel() {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    final now = DateTime.now();
+    return '${months[now.month - 1]} ${now.year}';
+  }
+}
+
+// ── Mini metric widget ────────────────────────────────────────────────────────
+
+class _MiniMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _MiniMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 22),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textDark,
           ),
-        ],
-      ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: AppColors.textLight,
+          ),
+        ),
+      ],
     );
   }
 }

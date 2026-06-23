@@ -22,11 +22,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
   bool _sortDescending = true;
   String _sortLabel = 'Newest First';
 
+  // Pagination
+  static const int _pageSize = 20;
+  int _currentPage = 0;
+
   @override
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      setState(() => _searchQuery = _searchController.text.toLowerCase().trim());
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase().trim();
+        _currentPage = 0; // Reset to first page on search change
+      });
     });
   }
 
@@ -119,6 +126,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       _sortBy = option['sortBy'] as String;
                       _sortDescending = option['desc'] as bool;
                       _sortLabel = option['label'] as String;
+                      _currentPage = 0; // Reset to first page on sort change
                     });
                   },
                 );
@@ -270,7 +278,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
               const SizedBox(height: 16),
 
-              // Gown grid
+              // Gown grid with pagination
               Expanded(
                 child: visible.isEmpty
                     ? Center(
@@ -284,29 +292,160 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           ),
                         ),
                       )
-                    : GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          mainAxisExtent: 270,
-                        ),
-                        itemCount: visible.length,
-                        itemBuilder: (context, index) {
-                          final gown = visible[index];
-                          return GownCard(
-                            gown: gown,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => GownDetailScreen(gown: gown),
+                    : () {
+                        final totalPages =
+                            (visible.length / _pageSize).ceil();
+                        final startIndex = _currentPage * _pageSize;
+                        final endIndex = (startIndex + _pageSize)
+                            .clamp(0, visible.length);
+                        final pageItems =
+                            visible.sublist(startIndex, endIndex);
+
+                        return Column(
+                          children: [
+                            Expanded(
+                              child: GridView.builder(
+                                padding: const EdgeInsets.fromLTRB(
+                                    20, 0, 20, 12),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  mainAxisExtent: 285,
+                                ),
+                                itemCount: pageItems.length,
+                                itemBuilder: (context, index) {
+                                  final gown = pageItems[index];
+                                  return GownCard(
+                                    gown: gown,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            GownDetailScreen(gown: gown),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          );
-                        },
-                      ),
+                            // Pagination controls
+                            if (totalPages > 1)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    20, 4, 20, 16),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Previous
+                                    GestureDetector(
+                                      onTap: _currentPage > 0
+                                          ? () => setState(
+                                              () => _currentPage--)
+                                          : null,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: _currentPage > 0
+                                              ? AppColors.primary
+                                              : AppColors.surfaceGrey,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.chevron_left,
+                                              size: 18,
+                                              color: _currentPage > 0
+                                                  ? AppColors
+                                                      .defaultForeground
+                                                  : AppColors.textLight,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Previous',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: _currentPage > 0
+                                                    ? AppColors
+                                                        .defaultForeground
+                                                    : AppColors.textLight,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                    // Page indicator
+                                    Text(
+                                      '${_currentPage + 1} / $totalPages',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textMid,
+                                      ),
+                                    ),
+
+                                    // Next
+                                    GestureDetector(
+                                      onTap: _currentPage <
+                                              totalPages - 1
+                                          ? () => setState(
+                                              () => _currentPage++)
+                                          : null,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: _currentPage <
+                                                  totalPages - 1
+                                              ? AppColors.primary
+                                              : AppColors.surfaceGrey,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Next',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: _currentPage <
+                                                        totalPages - 1
+                                                    ? AppColors
+                                                        .defaultForeground
+                                                    : AppColors.textLight,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              Icons.chevron_right,
+                                              size: 18,
+                                              color: _currentPage <
+                                                      totalPages - 1
+                                                  ? AppColors
+                                                      .defaultForeground
+                                                  : AppColors.textLight,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        );
+                      }(),
               ),
             ],
           );

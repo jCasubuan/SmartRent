@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/screens/admin/gowns/edit_gown_screen.dart';
 import 'package:smart_rent/services/gown_service.dart';
 
@@ -227,12 +228,11 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                                         () => _currentImageIndex = index);
                                   },
                                   itemBuilder: (context, index) {
-                                    return Image.network(
-                                      images[index],
+                                    return CachedImage(
+                                      imageUrl: images[index],
                                       fit: BoxFit.contain,
                                       width: double.infinity,
-                                      errorBuilder: (_, __, ___) =>
-                                          _imagePlaceholder(),
+                                      errorWidget: _imagePlaceholder(),
                                     );
                                   },
                                 )

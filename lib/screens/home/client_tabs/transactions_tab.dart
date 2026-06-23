@@ -210,14 +210,89 @@ class _RequestList extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
+    final grouped = _groupByDate(rentals);
+
+    return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      itemCount: rentals.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, index) =>
-          _RequestCard(rental: rentals[index]),
+      itemCount: grouped.length,
+      itemBuilder: (context, index) {
+        final section = grouped[index];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 10),
+              child: Text(
+                section.label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textLight,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+            ...section.items.map((rental) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _RequestCard(rental: rental),
+                )),
+          ],
+        );
+      },
     );
   }
+
+  List<_DateGroup> _groupByDate(List<RentalModel> rentals) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final Map<String, List<RentalModel>> map = {};
+    final List<String> orderedKeys = [];
+
+    for (final rental in rentals) {
+      final dt = rental.createdAt;
+      String label;
+      if (dt == null) {
+        label = 'Today';
+      } else {
+        final rentalDay = DateTime(dt.year, dt.month, dt.day);
+        if (rentalDay == today) {
+          label = 'Today';
+        } else if (rentalDay == yesterday) {
+          label = 'Yesterday';
+        } else {
+          label = _formatDateLabel(dt);
+        }
+      }
+
+      if (!map.containsKey(label)) {
+        map[label] = [];
+        orderedKeys.add(label);
+      }
+      map[label]!.add(rental);
+    }
+
+    return orderedKeys
+        .map((key) => _DateGroup(label: key, items: map[key]!))
+        .toList();
+  }
+
+  String _formatDateLabel(DateTime dt) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+}
+
+// ── Date group model ──────────────────────────────────────────────────────────
+
+class _DateGroup {
+  final String label;
+  final List<RentalModel> items;
+  const _DateGroup({required this.label, required this.items});
 }
 
 // ── Request card ──────────────────────────────────────────────────────────────
