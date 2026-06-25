@@ -36,14 +36,17 @@ lib/
 │   ├── utils/
 │   │   ├── guest_preferences.dart # Persists guest session across app restarts
 │   │   ├── logout_helper.dart    # Shared logout flow (confirm → loading → signOut → landing)
+│   │   ├── memory_cache.dart     # Generic TTL-based in-memory cache
 │   │   └── price_formatter.dart  # PriceFormatter.format(double) → '5,000'
 │   └── widgets/                  # Shared reusable widgets used across the whole app
 │       ├── action_card.dart
 │       ├── analytics_card.dart
 │       ├── app_footer.dart
+│       ├── cached_image.dart     # CachedNetworkImage wrapper — disk-cached remote images
 │       ├── field_label.dart      # Small uppercase label above form fields
 │       ├── gown_card.dart        # Universal gown card (2-col grid, BoxFit.contain image)
 │       ├── gown_form_field.dart  # TextFormField for admin gown forms (optional prefix icon)
+│       ├── in_app_notification_banner.dart # Slide-down banner for real-time notifications
 │       ├── input_field.dart      # TextFormField for auth screens (required prefix icon)
 │       ├── social_icon_button.dart
 │       └── stat_summary_card.dart
@@ -53,14 +56,22 @@ lib/
 │
 ├── screens/
 │   ├── admin/
+│   │   ├── cleaning/
+│   │   │   └── cleaning_screen.dart        # Gowns in cleaning — mark as clean or extend
 │   │   ├── customers/
 │   │   │   ├── customer_list_screen.dart   # Unique customers from rentals, paginated, searchable
 │   │   │   └── customer_history_screen.dart # Per-customer approved/completed rental history
-│   │   └── gowns/
-│   │       ├── add_gown_screen.dart
-│   │       ├── edit_gown_screen.dart
-│   │       ├── gown_detail_screen.dart
-│   │       └── inventory_screen.dart
+│   │   ├── gowns/
+│   │   │   ├── add_gown_screen.dart
+│   │   │   ├── edit_gown_screen.dart
+│   │   │   ├── gown_detail_screen.dart
+│   │   │   └── inventory_screen.dart       # Category filter dropdown + search + sort
+│   │   ├── overdue/
+│   │   │   └── overdue_screen.dart         # All overdue items (rentals + cleaning + repair)
+│   │   ├── rented/
+│   │   │   └── rented_screen.dart          # Currently rented gowns — mark as returned
+│   │   └── repair/
+│   │       └── repair_screen.dart          # Gowns in repair — mark as done or extend
 │   ├── auth/
 │   │   ├── forgot_password_screen.dart
 │   │   ├── landing_page.dart
@@ -68,21 +79,22 @@ lib/
 │   │   ├── signin_screen.dart
 │   │   └── signup_screen.dart
 │   ├── client/
+│   │   ├── bookmarks_screen.dart       # Customer bookmarked gowns
 │   │   ├── gown_detail_screen.dart     # Customer gown detail — image carousel, rent button
 │   │   ├── rental_request_screen.dart  # Rental request form — submit to Firestore
-│   │   └── request_details_screen.dart # View/modify/cancel a pending rental request
+│   │   └── request_details_screen.dart # View/modify/cancel a rental request (all statuses)
 │   ├── home/
 │   │   ├── admin_tabs/
 │   │   │   ├── admin_profile_tab.dart  # Admin profile + logout
-│   │   │   ├── dashboard_tab.dart      # Main admin dashboard
-│   │   │   ├── inbox_tab.dart          # Stub
-│   │   │   ├── reports_tab.dart        # Stub
+│   │   │   ├── dashboard_tab.dart      # Main admin dashboard — live stats + analytics
+│   │   │   ├── inbox_tab.dart          # 3 tabs: Notifications | Pending | Awaiting Pickup
+│   │   │   ├── reports_tab.dart        # Revenue analytics — bar chart, metrics, top gowns
 │   │   │   └── scanner_tab.dart        # Stub
 │   │   ├── client_tabs/
-│   │   │   ├── home_tab.dart           # Real HomeTab — loads from Firestore
-│   │   │   ├── notifications_tab.dart  # Stub
+│   │   │   ├── home_tab.dart           # Client home — category filter chips, search, gown grid
+│   │   │   ├── notifications_tab.dart  # Clickable notifications — navigate to request details
 │   │   │   ├── profile_tab.dart        # Client profile + logout (guest + logged-in states)
-│   │   │   └── transactions_tab.dart   # Stub
+│   │   │   └── transactions_tab.dart   # 5 tabs: Current | Approved | Ongoing | Declined | Completed
 │   │   ├── admin_home.dart
 │   │   └── client_home.dart
 │   └── splash/
@@ -90,12 +102,14 @@ lib/
 │       └── splash_screen.dart
 │
 ├── services/
+│   ├── admin_log_service.dart    # Admin activity log (audit trail) — writes/reads admin_logs collection
 │   ├── category_service.dart
 │   ├── cloudinary_service.dart
 │   ├── customer_service.dart
 │   ├── gown_service.dart
 │   ├── notification_service.dart
 │   ├── rental_service.dart
+│   ├── reports_service.dart
 │   ├── stats_service.dart
 │   └── user_service.dart
 │
@@ -387,10 +401,11 @@ Both folders are declared in `pubspec.yaml`. Do not add new asset folders withou
 | Collection | Purpose |
 |---|---|
 | `users` | User profiles. Fields: `name`, `email`, `role` (`'admin'`/`'client'`), `createdAt`, `bookmarks` (array of gown IDs) |
-| `users/{uid}/notifications` | In-app notifications per customer. Fields: `title`, `body`, `type` (`'approved'`/`'rejected'`/`'completed'`), `rentalId`, `gownName`, `isRead`, `createdAt`. Written by admin actions via `NotificationService`. |
+| `users/{uid}/notifications` | In-app notifications per customer. Fields: `title`, `body`, `type` (`'approved'`/`'rejected'`/`'completed'`/`'overdue'`), `rentalId`, `gownName`, `isRead`, `createdAt`. Written by admin actions via `NotificationService`. |
 | `gowns` | Gown inventory. Fields match `GownModel.toFirestore()` |
-| `categories` | Gown categories. Fields: `name`, `order` |
-| `rentals` | Rental requests. Fields: `gownId`, `gownName`, `gownCode`, `customerId`, `customerName`, `phone`, `pickupDate`, `returnDate`, `status` (`pending`/`approved`/`rejected`/`cancelled`/`completed`), `createdAt` |
+| `categories` | Gown categories. Fields: `name`, `order`. Duplicate names prevented (case-insensitive). |
+| `rentals` | Rental requests. Fields: `gownId`, `gownName`, `gownCode`, `customerId`, `customerName`, `phone`, `pickupDate`, `returnDate`, `status` (`pending`/`approved`/`picked_up`/`rejected`/`cancelled`/`completed`/`no_show`), `createdAt` |
+| `admin_logs` | Admin activity log / audit trail. Fields: `type`, `title`, `body`, `targetType` (gown/rental/cleaning/repair/overdue), `targetId`, `isRead`, `createdAt`. Written automatically by service methods. |
 
 ---
 
@@ -407,6 +422,7 @@ Both folders are declared in `pubspec.yaml`. Do not add new asset folders withou
 | `device_info_plus` | Android SDK version check for permissions |
 | `http` | Cloudinary image upload |
 | `shared_preferences` | Guest session persistence across app restarts |
+| `cached_network_image` | Disk-level image caching — images load instantly after first download |
 
 Do not add new dependencies without discussion. Prefer packages already in use.
 
@@ -458,18 +474,7 @@ These screens exist but show placeholder content. Do not remove the stubs — re
 
 | File | Stub content | Notes |
 |---|---|---|
-| `inbox_tab.dart` | `'Inbox'` text | ✅ Implemented — real-time rental requests + Active tab with Mark as Returned |
 | `scanner_tab.dart` | `'Scanner'` text | Needs QR scanner |
-| `reports_tab.dart` | `'Reports'` text | Needs analytics |
-| `client_tabs.dart` → `TransactionsTab` | `'Transactions'` text | ✅ Implemented — My Rental Requests with 4 tabs (Current, Approved, Declined, Completed) |
-| `client_tabs.dart` → `NotificationsTab` | `'Notifications'` text | ✅ Implemented — in-app notifications with unread badge |
-| `home_tab.dart` → bookmark icon (top bar, logged in) | navigates nowhere | Needs bookmarks page |
-| `dashboard_tab.dart` → Customer card | `TODO` | Navigate to customer list |
-| `dashboard_tab.dart` → Overdue card | `TODO` | Navigate to overdue list |
-| `dashboard_tab.dart` → Cleaning card | `TODO` | Navigate to cleaning list |
-| `dashboard_tab.dart` → Rented card | `TODO` | Navigate to rented list |
-| `analytics_card.dart` | Placeholder chart | Needs real chart widget |
-| `home_tab.dart` → filter chips | UI only | Filter logic not wired |
 
 ---
 
@@ -493,3 +498,15 @@ The `optimizeUrl()` method in `cloudinary_service.dart` is commented out but ava
 | 2026-05-16 | Rental lifecycle: added `completeRental()` to `RentalService`; `InboxTab` now has Pending + Active tabs with "Mark as Returned" (available or cleaning); `completed` status added to `RentalModel` and `AppColors` |
 | 2026-05-16 | In-app notifications: added `NotificationService` + `users/{uid}/notifications` subcollection; approve/reject/complete all write notifications; `NotificationsTab` fully implemented with unread badge on client nav |
 | 2026-05-16 | Customer list + history: `CustomerService`, `CustomerListScreen`, `CustomerHistoryScreen`; dashboard Customer card now navigates to list; dashboard "Ongoing" stat counts active (approved) rentals instead of registered users |
+| 2026-06-26 | Duplicate category prevention: `CategoryService.addCategory` now rejects case-insensitive duplicates; both add/edit gown screens show error if category exists |
+| 2026-06-26 | Admin activity log: `AdminLogService` + `admin_logs` Firestore collection; InboxTab now has 3 tabs (Notifications, Pending, Awaiting Pickup); clickable cards navigate to relevant screens; 3-dot menu with Mark as Read + Delete; date section headers |
+| 2026-06-26 | Service logging: All rental actions (request/approve/reject/pickup/complete/no-show) and gown actions (add/edit/delete/cleaning/repair) write to `admin_logs` |
+| 2026-06-26 | Customer notifications enhanced: cards now clickable (navigate to RequestDetailsScreen); 3-dot menu has Mark as Read + Delete; removed auto-markAllRead on tab open; added "Mark all as read" button |
+| 2026-06-26 | Pickup notification: `confirmPickup` now sends in-app notification to customer with return date reminder |
+| 2026-06-26 | Ongoing tab: TransactionsTab now has 5 scrollable tabs — added "Ongoing" (picked_up status) between Approved and Declined |
+| 2026-06-26 | RequestDetailsScreen: properly handles `picked_up` ("Ongoing Rental") and `no_show` statuses instead of falling through to "Cancelled" |
+| 2026-06-26 | Bug fixes: password error text cut-off (`errorMaxLines: 2` in InputField); duplicate gown name warning (soft block with "Save Anyway"); rental price min ₱100 / max ₱999,999 with 6-digit input limit; measurement validation with per-field realistic ranges; customer name field blocks numbers via inputFormatter |
+| 2026-06-26 | Image caching: replaced all `Image.network` with `CachedImage` (disk-cached via `cached_network_image`) across cleaning, repair, rented, overdue, transactions, and request details screens |
+| 2026-06-26 | Layout fix: cleaning + repair screens — added `StackFit.expand` to fix images not rendering in grid cards |
+| 2026-06-26 | Firestore rules: added `admin_logs` collection rules (authenticated read/write) |
+| 2026-06-26 | Admin home: added `onError` handler to pending stream subscription to prevent debugger pauses on logout |

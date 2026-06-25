@@ -1,11 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/screens/admin/cleaning/cleaning_screen.dart';
+import 'package:smart_rent/screens/admin/gowns/gown_detail_screen.dart';
+import 'package:smart_rent/screens/admin/overdue/overdue_screen.dart';
+import 'package:smart_rent/screens/admin/repair/repair_screen.dart';
+import 'package:smart_rent/services/admin_log_service.dart';
 import 'package:smart_rent/services/rental_service.dart';
 
-/// Admin inbox — two tabs:
-///   Pending   — new requests waiting for approve / decline
-///   Active    — approved rentals waiting to be returned
+/// Admin inbox — three tabs:
+///   Notifications — read-only audit log of all activity
+///   Pending       — new requests waiting for approve / decline
+///   Active        — approved rentals waiting to be picked up
 class InboxTab extends StatefulWidget {
   const InboxTab({super.key});
 
@@ -20,7 +28,7 @@ class _InboxTabState extends State<InboxTab>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -38,7 +46,7 @@ class _InboxTabState extends State<InboxTab>
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          'Rental Requests',
+          'Inbox',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
@@ -59,6 +67,7 @@ class _InboxTabState extends State<InboxTab>
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
           tabs: const [
+            Tab(text: 'Notifications'),
             Tab(text: 'Pending'),
             Tab(text: 'Awaiting Pickup'),
           ],
@@ -66,12 +75,452 @@ class _InboxTabState extends State<InboxTab>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          _PendingList(),
-          _ActiveList(),
+        children: [
+          _NotificationsList(tabController: _tabController),
+          const _PendingList(),
+          const _ActiveList(),
         ],
       ),
     );
+  }
+}
+
+// ── Notifications list (audit log) ────────────────────────────────────────────
+
+class _NotificationsList extends StatelessWidget {
+  final TabController tabController;
+
+  const _NotificationsList({required this.tabController});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: AdminLogService.logsStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
+        }
+        if (snapshot.hasError) {
+          return _errorView();
+        }
+
+        final logs = snapshot.data ?? [];
+        if (logs.isEmpty) {
+          return _emptyView(
+            icon: Icons.notifications_outlined,
+            title: 'No activity yet',
+            subtitle: 'Actions and events will be logged here.',
+          );
+        }
+
+        // Group logs by date section
+        final items = _buildGroupedItems(logs);
+
+        return Column(
+          children: [
+            // Mark all as read button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GestureDetector(
+                    onTap: () => AdminLogService.markAllRead(),
+                    child: const Text(
+                      'Mark all as read',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  if (item is String) {
+                    // Date header
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        top: index == 0 ? 0 : 16,
+                        bottom: 8,
+                      ),
+                      child: Text(
+                        item,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textLight,
+                        ),
+                      ),
+                    );
+                  }
+                  // Notification card
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _NotificationCard(
+                        log: item as Map<String, dynamic>,
+                        tabController: tabController),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Groups logs by date and inserts string headers between sections.
+  /// Returns a mixed list: String (header) or Map<String, dynamic> (log entry).
+  List<dynamic> _buildGroupedItems(List<Map<String, dynamic>> logs) {
+    final List<dynamic> items = [];
+    String? lastDateLabel;
+
+    for (final log in logs) {
+      final createdAt = (log['createdAt'] as Timestamp?)?.toDate();
+      final dateLabel = _dateSectionLabel(createdAt);
+
+      if (dateLabel != lastDateLabel) {
+        items.add(dateLabel);
+        lastDateLabel = dateLabel;
+      }
+      items.add(log);
+    }
+
+    return items;
+  }
+
+  /// Returns a human-friendly date section label.
+  String _dateSectionLabel(DateTime? date) {
+    if (date == null) return 'Just now';
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final logDay = DateTime(date.year, date.month, date.day);
+
+    final diff = today.difference(logDay).inDays;
+
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    if (diff < 7) return '${diff} days ago';
+
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+}
+
+// ── Notification card ─────────────────────────────────────────────────────────
+
+class _NotificationCard extends StatelessWidget {
+  final Map<String, dynamic> log;
+  final TabController tabController;
+  const _NotificationCard({required this.log, required this.tabController});
+
+  @override
+  Widget build(BuildContext context) {
+    final id = log['id'] as String? ?? '';
+    final type = log['type'] as String? ?? '';
+    final title = log['title'] as String? ?? '';
+    final body = log['body'] as String? ?? '';
+    final isRead = log['isRead'] as bool? ?? false;
+    final targetType = log['targetType'] as String?;
+    final targetId = log['targetId'] as String?;
+    final createdAt = (log['createdAt'] as Timestamp?)?.toDate();
+
+    return GestureDetector(
+      onTap: () {
+        // Mark as read on tap
+        if (!isRead) AdminLogService.markRead(id);
+        // Navigate to target
+        _navigateToTarget(context, targetType, targetId);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isRead
+              ? AppColors.background
+              : AppColors.primary.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: isRead
+              ? null
+              : Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _iconColor(type).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(_icon(type), color: _iconColor(type), size: 18),
+            ),
+            const SizedBox(width: 12),
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight:
+                                isRead ? FontWeight.w500 : FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (!isRead)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    body,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textMid,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (createdAt != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _timeAgo(createdAt),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textLight,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // 3-dot menu
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert,
+                  color: AppColors.textLight, size: 18),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              onSelected: (action) {
+                if (action == 'read') {
+                  AdminLogService.markRead(id);
+                } else if (action == 'delete') {
+                  AdminLogService.deleteLog(id);
+                }
+              },
+              itemBuilder: (_) => [
+                if (!isRead)
+                  const PopupMenuItem(
+                    value: 'read',
+                    child: Row(
+                      children: [
+                        Icon(Icons.done, size: 16, color: AppColors.primary),
+                        SizedBox(width: 8),
+                        Text('Mark as read',
+                            style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline,
+                          size: 16, color: AppColors.error),
+                      SizedBox(width: 8),
+                      Text('Delete',
+                          style:
+                              TextStyle(fontSize: 13, color: AppColors.error)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToTarget(
+      BuildContext context, String? targetType, String? targetId) {
+    if (targetType == null || targetId == null || targetId.isEmpty) return;
+
+    final type = log['type'] as String? ?? '';
+
+    switch (targetType) {
+      case 'gown':
+        FirebaseFirestore.instance
+            .collection('gowns')
+            .doc(targetId)
+            .get()
+            .then((doc) {
+          if (doc.exists && context.mounted) {
+            final gown = GownModel.fromFirestore(doc);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => GownDetailScreen(gown: gown),
+              ),
+            );
+          } else if (context.mounted) {
+            _showGone(context);
+          }
+        });
+        break;
+      case 'cleaning':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CleaningScreen()),
+        );
+        break;
+      case 'repair':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const RepairScreen()),
+        );
+        break;
+      case 'overdue':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const OverdueScreen()),
+        );
+        break;
+      case 'rental':
+        // Rental request → switch to Pending tab (index 1)
+        // Approved/picked up → switch to Awaiting Pickup tab (index 2)
+        if (type == AdminLogType.rentalRequested) {
+          tabController.animateTo(1);
+        } else if (type == AdminLogType.rentalApproved ||
+            type == AdminLogType.rentalPickedUp) {
+          tabController.animateTo(2);
+        } else {
+          // For completed, rejected, no-show, cancelled — go to gown detail
+          FirebaseFirestore.instance
+              .collection('gowns')
+              .doc(targetId)
+              .get()
+              .then((doc) {
+            if (doc.exists && context.mounted) {
+              final gown = GownModel.fromFirestore(doc);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => GownDetailScreen(gown: gown),
+                ),
+              );
+            } else if (context.mounted) {
+              _showGone(context);
+            }
+          });
+        }
+        break;
+    }
+  }
+
+  void _showGone(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('This item no longer exists'),
+        backgroundColor: AppColors.textDark,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  IconData _icon(String type) {
+    return switch (type) {
+      'rental_requested' => Icons.inbox_outlined,
+      'rental_approved' => Icons.check_circle_outline,
+      'rental_rejected' => Icons.cancel_outlined,
+      'rental_picked_up' => Icons.shopping_bag_outlined,
+      'rental_completed' => Icons.assignment_turned_in_outlined,
+      'rental_no_show' => Icons.person_off_outlined,
+      'rental_cancelled' => Icons.block_outlined,
+      'gown_added' => Icons.add_circle_outline,
+      'gown_edited' => Icons.edit_outlined,
+      'gown_deleted' => Icons.delete_outline,
+      'gown_sent_cleaning' => Icons.local_laundry_service_outlined,
+      'gown_marked_clean' => Icons.check_circle_outline,
+      'gown_sent_repair' => Icons.build_outlined,
+      'gown_repair_done' => Icons.check_circle_outline,
+      'rental_overdue' || 'cleaning_overdue' || 'repair_overdue' =>
+        Icons.warning_amber_outlined,
+      _ => Icons.notifications_outlined,
+    };
+  }
+
+  Color _iconColor(String type) {
+    return switch (type) {
+      'rental_requested' => AppColors.primary,
+      'rental_approved' || 'rental_picked_up' => AppColors.rentalApproved,
+      'rental_rejected' || 'rental_no_show' || 'rental_cancelled' =>
+        AppColors.error,
+      'rental_completed' || 'gown_marked_clean' || 'gown_repair_done' =>
+        AppColors.rentalCompleted,
+      'gown_added' => AppColors.primary,
+      'gown_edited' => AppColors.statusCleaning,
+      'gown_deleted' => AppColors.error,
+      'gown_sent_cleaning' => AppColors.statusCleaning,
+      'gown_sent_repair' => AppColors.statusRepair,
+      'rental_overdue' || 'cleaning_overdue' || 'repair_overdue' =>
+        AppColors.error,
+      _ => AppColors.textMid,
+    };
+  }
+
+  String _timeAgo(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+
+    return '${date.month}/${date.day}/${date.year}';
   }
 }
 
@@ -167,7 +616,7 @@ Widget _errorView() {
           Icon(Icons.wifi_off_outlined, size: 48, color: AppColors.border),
           SizedBox(height: 12),
           Text(
-            'Could not load requests.',
+            'No notifications yet.',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -176,7 +625,7 @@ Widget _errorView() {
           ),
           SizedBox(height: 6),
           Text(
-            'Check your internet connection.',
+            'New updates and alerts will appear here.',
             style: TextStyle(fontSize: 13, color: AppColors.textMid),
             textAlign: TextAlign.center,
           ),

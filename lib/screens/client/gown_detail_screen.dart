@@ -204,7 +204,7 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
 
     // Customer-friendly button text based on gown status
     final buttonText = switch (gown.status) {
-      'available' => 'Rent this Gown',
+      'available' => 'Rent this Item',
       'reserved'  => 'Temporarily Unavailable',
       'rented'    => 'Currently Rented Out',
       'cleaning'  => 'Under Maintenance',

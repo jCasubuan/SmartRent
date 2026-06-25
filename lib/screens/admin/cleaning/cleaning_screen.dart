@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/services/gown_service.dart';
 
 /// Admin cleaning screen — shows all gowns currently in 'cleaning' status.
@@ -389,16 +390,17 @@ class _CleaningGownCard extends StatelessWidget {
           // Gown image with optional overdue badge
           Expanded(
             child: Stack(
+              fit: StackFit.expand,
               children: [
                 ClipRRect(
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(13)),
                   child: hasImage
-                      ? Image.network(
-                          gown.imageUrls.first,
+                      ? CachedImage(
+                          imageUrl: gown.imageUrls.first,
                           width: double.infinity,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => _placeholder(),
+                          height: double.infinity,
+                          fit: BoxFit.cover,
                         )
                       : _placeholder(),
                 ),

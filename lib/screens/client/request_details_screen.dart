@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/core/widgets/field_label.dart';
 import 'package:smart_rent/services/rental_service.dart';
 
@@ -164,11 +165,15 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   ? 'Waiting for Confirmation'
                   : r.status == 'approved'
                       ? 'Booking Confirmed'
-                      : r.status == 'rejected'
-                          ? 'Request Not Approved'
-                          : r.status == 'completed'
-                              ? 'Rental Completed'
-                              : 'Cancelled',
+                      : r.status == 'picked_up'
+                          ? 'Ongoing Rental'
+                          : r.status == 'rejected'
+                              ? 'Request Not Approved'
+                              : r.status == 'completed'
+                                  ? 'Rental Completed'
+                                  : r.status == 'no_show'
+                                      ? 'No-show — Booking Cancelled'
+                                      : 'Cancelled',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -186,12 +191,11 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: hasImage
-                      ? Image.network(
-                          r.gownImageUrl,
+                      ? CachedImage(
+                          imageUrl: r.gownImageUrl,
                           width: 140,
                           height: 180,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => _imagePlaceholder(),
                         )
                       : _imagePlaceholder(),
                 ),

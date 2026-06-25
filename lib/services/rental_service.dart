@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/services/admin_log_service.dart';
 import 'package:smart_rent/services/notification_service.dart';
 
 /// Handles rental request operations in Firestore.
@@ -43,6 +44,16 @@ class RentalService {
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      // Log for admin notifications
+      AdminLogService.log(
+        type: AdminLogType.rentalRequested,
+        title: 'New rental request',
+        body: '$customerName wants to rent "$gownName"',
+        targetType: 'rental',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[RentalService.submitRequest] $e');
@@ -184,6 +195,15 @@ class RentalService {
         );
       }
 
+      // Admin log
+      AdminLogService.log(
+        type: AdminLogType.rentalApproved,
+        title: 'Rental approved',
+        body: 'Approved "$gownName" for ${data?['customerName'] ?? 'customer'}',
+        targetType: 'rental',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[RentalService.approveRequest] $e');
@@ -194,11 +214,20 @@ class RentalService {
   /// Confirms customer picked up the gown. Sets rental to 'picked_up'
   /// and gown status from 'reserved' to 'rented'.
   /// Also stores the return date on the gown document for easy access.
+  /// Sends a notification to the customer confirming pickup.
   static Future<bool> confirmPickup(String rentalId, String gownId) async {
     try {
       // Get the return date from the rental
       final rentalDoc = await _collection.doc(rentalId).get();
-      final returnDate = rentalDoc.data()?['returnDate'] as Timestamp?;
+      final data = rentalDoc.data();
+      final returnDate = data?['returnDate'] as Timestamp?;
+      final gownName = '${data?['gownName'] ?? ''}';
+      final customerName = '${data?['customerName'] ?? ''}';
+      final customerId = '${data?['customerId'] ?? ''}';
+      final returnDateDt = returnDate?.toDate();
+      final returnStr = returnDateDt != null
+          ? '${_monthName(returnDateDt.month)} ${returnDateDt.day}, ${returnDateDt.year}'
+          : '';
 
       final batch = FirebaseFirestore.instance.batch();
       batch.update(_collection.doc(rentalId), {
@@ -210,6 +239,30 @@ class RentalService {
         'rentalReturnDate': returnDate,
       });
       await batch.commit();
+
+      // Send notification to customer
+      if (customerId.isNotEmpty) {
+        await NotificationService.sendNotification(
+          customerId: customerId,
+          title: 'Gown picked up ✓',
+          body: returnStr.isNotEmpty
+              ? 'You\'ve picked up "$gownName". Please return it by $returnStr. Enjoy!'
+              : 'You\'ve picked up "$gownName". Enjoy your rental!',
+          type: 'approved',
+          rentalId: rentalId,
+          gownName: gownName,
+        );
+      }
+
+      // Admin log
+      AdminLogService.log(
+        type: AdminLogType.rentalPickedUp,
+        title: 'Gown picked up',
+        body: '$customerName picked up "$gownName"',
+        targetType: 'gown',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[RentalService.confirmPickup] $e');
@@ -249,6 +302,15 @@ class RentalService {
         );
       }
 
+      // Admin log
+      AdminLogService.log(
+        type: AdminLogType.rentalNoShow,
+        title: 'No-show',
+        body: '${data?['customerName'] ?? 'Customer'} didn\'t pick up "$gownName"',
+        targetType: 'gown',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[RentalService.markNoShow] $e');
@@ -281,6 +343,15 @@ class RentalService {
           gownName: gownName,
         );
       }
+
+      // Admin log
+      AdminLogService.log(
+        type: AdminLogType.rentalRejected,
+        title: 'Rental declined',
+        body: 'Declined "$gownName" request from ${data?['customerName'] ?? 'customer'}',
+        targetType: 'rental',
+        targetId: rentalId,
+      );
 
       return true;
     } catch (e) {
@@ -324,6 +395,15 @@ class RentalService {
           gownName: gownName,
         );
       }
+
+      // Admin log
+      AdminLogService.log(
+        type: AdminLogType.rentalCompleted,
+        title: 'Rental completed',
+        body: '"$gownName" returned — set to $nextGownStatus',
+        targetType: 'gown',
+        targetId: gownId,
+      );
 
       return true;
     } catch (e) {

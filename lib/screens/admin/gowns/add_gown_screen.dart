@@ -332,6 +332,15 @@ void _showPermissionDialog() {
                 final text = controller.text.trim();
                 if (text.isEmpty || text.length < 2) return;
 
+                // Check locally first for immediate feedback
+                final duplicate = _categories.any((c) =>
+                    c.name.trim().toLowerCase() == text.toLowerCase());
+                if (duplicate) {
+                  Navigator.pop(context);
+                  _showSnackbar('Category "$text" already exists');
+                  return;
+                }
+
                 // Close dialog first
                 Navigator.pop(context);
 
@@ -346,6 +355,8 @@ void _showPermissionDialog() {
                     if (newCategory != null) {
                       _categories.add(newCategory);
                       _selectedCategory = newCategory;
+                    } else {
+                      _showSnackbar('Category "$text" already exists');
                     }
                   });
                 }
@@ -359,11 +370,89 @@ void _showPermissionDialog() {
     );
   }
 
+  // ── Measurement validation ──────────────────────────────────────────────────
+
+  static const _measurementLimits = <String, (double, double)>{
+    'Bust': (50, 200),
+    'Waist': (40, 180),
+    'Hips': (50, 200),
+    'Shoulder Width': (25, 70),
+    'Hollow to Hem': (80, 200),
+    'Armhole': (15, 60),
+    'Sleeve Length': (20, 100),
+    'Neck Circumference': (25, 60),
+    'Back Width': (25, 60),
+    'Height': (100, 220),
+  };
+
+  String? _validateMeasurement(String? val, String label) {
+    if (val == null || val.trim().isEmpty) return null; // optional field
+    final num = double.tryParse(val.trim());
+    if (num == null) return 'Invalid';
+
+    final limits = _measurementLimits[label];
+    final min = limits?.$1 ?? 1;
+    final max = limits?.$2 ?? 300;
+
+    if (num < min) return 'Min ${min.toInt()} cm';
+    if (num > max) return 'Max ${max.toInt()} cm';
+    return null;
+  }
+
   Future<void> _saveGown() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategory == null) {
       _showSnackbar('Please select a category');
       return;
+    }
+
+    // Check for duplicate name
+    final duplicateCode = await GownService.checkDuplicateName(
+      _nameController.text.trim(),
+    );
+
+    if (duplicateCode != null && mounted) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Duplicate Name',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
+          content: Text(
+            'A gown named "${_nameController.text.trim()}" already exists ($duplicateCode). Save anyway?',
+            style: const TextStyle(fontSize: 14, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                    color: AppColors.textMid, fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.defaultForeground,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text(
+                'Save Anyway',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (proceed != true) return;
     }
 
     setState(() => _isSaving = true);
@@ -612,7 +701,7 @@ void _showPermissionDialog() {
                   hint: 'e.g. 5000',
                   keyboardType: TextInputType.number,
                   prefixIcon: Icons.payments_outlined,
-                  maxLength: 10,
+                  maxLength: 6,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                   ],
@@ -623,6 +712,12 @@ void _showPermissionDialog() {
                     final price = double.tryParse(val.trim());
                     if (price == null || price <= 0) {
                       return 'Please enter a valid price';
+                    }
+                    if (price < 100) {
+                      return 'Minimum rental price is ₱100';
+                    }
+                    if (price > 999999) {
+                      return 'Maximum rental price is ₱999,999';
                     }
                     return null;
                   },
@@ -704,6 +799,7 @@ void _showPermissionDialog() {
                   itemCount: _measurements.length,
                   itemBuilder: (context, index) {
                     final m = _measurements[index];
+                    final label = m['label'] as String;
                     return TextFormField(
                       controller:
                           m['controller'] as TextEditingController,
@@ -711,12 +807,13 @@ void _showPermissionDialog() {
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
                             RegExp(r'[\d.]')),
-                        LengthLimitingTextInputFormatter(6),
+                        LengthLimitingTextInputFormatter(5),
                       ],
+                      validator: (val) => _validateMeasurement(val, label),
                       style: const TextStyle(
                           fontSize: 13, color: AppColors.textDark),
                       decoration: InputDecoration(
-                        labelText: m['label'] as String,
+                        labelText: label,
                         labelStyle: const TextStyle(
                             fontSize: 12, color: AppColors.textLight),
                         contentPadding: const EdgeInsets.symmetric(
@@ -731,6 +828,17 @@ void _showPermissionDialog() {
                           borderSide: const BorderSide(
                               color: AppColors.primary, width: 1.5),
                         ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:
+                              const BorderSide(color: AppColors.error),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                              color: AppColors.error, width: 1.5),
+                        ),
+                        errorStyle: const TextStyle(fontSize: 10),
                       ),
                     );
                   },

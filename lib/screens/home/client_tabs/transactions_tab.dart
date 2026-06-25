@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
 import 'package:smart_rent/screens/client/request_details_screen.dart';
 import 'package:smart_rent/services/rental_service.dart';
@@ -22,7 +23,7 @@ class _TransactionsTabState extends State<TransactionsTab>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -123,6 +124,8 @@ class _TransactionsTabState extends State<TransactionsTab>
         ),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           labelColor: AppColors.defaultForeground,
           unselectedLabelColor: AppColors.textMid,
           labelStyle: const TextStyle(
@@ -134,9 +137,11 @@ class _TransactionsTabState extends State<TransactionsTab>
           ),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 16),
           tabs: const [
             Tab(text: 'Current'),
             Tab(text: 'Approved'),
+            Tab(text: 'Ongoing'),
             Tab(text: 'Declined'),
             Tab(text: 'Completed'),
           ],
@@ -166,6 +171,8 @@ class _TransactionsTabState extends State<TransactionsTab>
               all.where((r) => r.status == 'pending').toList();
           final approved =
               all.where((r) => r.status == 'approved').toList();
+          final ongoing =
+              all.where((r) => r.status == 'picked_up').toList();
           final declined = all
               .where((r) =>
                   r.status == 'rejected' || r.status == 'cancelled')
@@ -178,6 +185,7 @@ class _TransactionsTabState extends State<TransactionsTab>
             children: [
               _RequestList(rentals: current,   emptyMessage: 'No pending requests yet.'),
               _RequestList(rentals: approved,  emptyMessage: 'No approved bookings yet.'),
+              _RequestList(rentals: ongoing,   emptyMessage: 'No ongoing rentals.'),
               _RequestList(rentals: declined,  emptyMessage: 'No declined requests.'),
               _RequestList(rentals: completed, emptyMessage: 'No completed rentals yet.'),
             ],
@@ -330,12 +338,11 @@ class _RequestCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: hasImage
-                  ? Image.network(
-                      r.gownImageUrl,
+                  ? CachedImage(
+                      imageUrl: r.gownImageUrl,
                       width: 80,
                       height: 90,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _placeholder(),
                     )
                   : _placeholder(),
             ),

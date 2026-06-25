@@ -590,6 +590,11 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                 TextFormField(
                   controller: _customerNameController,
                   textCapitalization: TextCapitalization.words,
+                  maxLength: 50,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-ZÀ-ÿ\s'\-\.]")),
+                  ],
                   style: const TextStyle(
                       fontSize: 14, color: AppColors.textDark),
                   decoration: _inputDecoration('Enter full name'),

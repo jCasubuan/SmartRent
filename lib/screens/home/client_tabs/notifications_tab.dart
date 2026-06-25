@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/models/rental_model.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
+import 'package:smart_rent/screens/client/request_details_screen.dart';
 import 'package:smart_rent/services/notification_service.dart';
 
 /// Customer notifications tab — shows in-app notifications written by admin
@@ -16,16 +18,6 @@ class NotificationsTab extends StatefulWidget {
 }
 
 class _NotificationsTabState extends State<NotificationsTab> {
-  @override
-  void initState() {
-    super.initState();
-    // Mark all unread as read when the tab is opened.
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      NotificationService.markAllRead(user.uid);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -148,17 +140,49 @@ class _NotificationsTabState extends State<NotificationsTab> {
           // Group notifications by date
           final grouped = _groupByDate(notifications);
 
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            itemCount: grouped.length,
-            itemBuilder: (context, index) {
-              final section = grouped[index];
-              return _DateSection(
-                label: section.label,
-                notifications: section.items,
-                customerId: user.uid,
-              );
-            },
+          // Check if there are any unread
+          final hasUnread = notifications.any(
+              (n) => (n['isRead'] as bool? ?? true) == false);
+
+          return Column(
+            children: [
+              // Mark all as read button
+              if (hasUnread)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GestureDetector(
+                        onTap: () =>
+                            NotificationService.markAllRead(user.uid),
+                        child: const Text(
+                          'Mark all as read',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  itemCount: grouped.length,
+                  itemBuilder: (context, index) {
+                    final section = grouped[index];
+                    return _DateSection(
+                      label: section.label,
+                      notifications: section.items,
+                      customerId: user.uid,
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -302,6 +326,7 @@ class _NotificationCard extends StatelessWidget {
     final body = notif['body'] as String? ?? '';
     final isRead = notif['isRead'] as bool? ?? true;
     final notifId = notif['id'] as String? ?? '';
+    final rentalId = notif['rentalId'] as String? ?? '';
 
     final createdAt = notif['createdAt'];
     final timeStr = _formatTime(createdAt);
@@ -311,9 +336,12 @@ class _NotificationCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
+        // Mark as read on tap
         if (!isRead && notifId.isNotEmpty) {
           NotificationService.markRead(customerId, notifId);
         }
+        // Navigate to the rental request details
+        _navigateToRental(context, rentalId);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -401,6 +429,12 @@ class _NotificationCard extends StatelessWidget {
 
               // 3-dot menu
               _MoreMenu(
+                isRead: isRead,
+                onMarkRead: () {
+                  if (notifId.isNotEmpty) {
+                    NotificationService.markRead(customerId, notifId);
+                  }
+                },
                 onDelete: () => _handleDelete(context, notifId),
               ),
             ],
@@ -408,6 +442,37 @@ class _NotificationCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _navigateToRental(BuildContext context, String rentalId) {
+    if (rentalId.isEmpty) return;
+
+    FirebaseFirestore.instance
+        .collection('rentals')
+        .doc(rentalId)
+        .get()
+        .then((doc) {
+      if (doc.exists && context.mounted) {
+        final rental = RentalModel.fromFirestore(doc);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => RequestDetailsScreen(rental: rental),
+          ),
+        );
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('This request no longer exists'),
+            backgroundColor: AppColors.textDark,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    });
   }
 
   void _handleDelete(BuildContext context, String notifId) async {
@@ -521,14 +586,21 @@ class _NotificationCard extends StatelessWidget {
 // ── 3-dot menu button ─────────────────────────────────────────────────────────
 
 class _MoreMenu extends StatelessWidget {
+  final bool isRead;
+  final VoidCallback onMarkRead;
   final VoidCallback onDelete;
 
-  const _MoreMenu({required this.onDelete});
+  const _MoreMenu({
+    required this.isRead,
+    required this.onMarkRead,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       onSelected: (value) {
+        if (value == 'read') onMarkRead();
         if (value == 'delete') onDelete();
       },
       icon: const Icon(
@@ -540,6 +612,20 @@ class _MoreMenu extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       itemBuilder: (context) => [
+        if (!isRead)
+          const PopupMenuItem<String>(
+            value: 'read',
+            child: Row(
+              children: [
+                Icon(Icons.done, size: 18, color: AppColors.primary),
+                SizedBox(width: 8),
+                Text(
+                  'Mark as read',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
+          ),
         const PopupMenuItem<String>(
           value: 'delete',
           child: Row(
@@ -547,7 +633,7 @@ class _MoreMenu extends StatelessWidget {
               Icon(Icons.delete_outline, size: 18, color: AppColors.error),
               SizedBox(width: 8),
               Text(
-                'Delete Notification',
+                'Delete',
                 style: TextStyle(fontSize: 13, color: AppColors.error),
               ),
             ],

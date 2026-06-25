@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:smart_rent/services/admin_log_service.dart';
 import 'package:smart_rent/services/cloudinary_service.dart';
 import '../core/models/gown_model.dart';
 
@@ -42,6 +43,15 @@ class GownService {
         'addedAt': FieldValue.serverTimestamp(),
       });
 
+      // Admin log
+      AdminLogService.log(
+        type: AdminLogType.gownAdded,
+        title: 'Gown added',
+        body: '"$name" ($code) added to inventory',
+        targetType: 'gown',
+        targetId: code,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[GownService.addGown] $e');
@@ -81,6 +91,15 @@ class GownService {
         'imageUrls': allImageUrls,
       });
 
+      // Admin log
+      AdminLogService.log(
+        type: AdminLogType.gownEdited,
+        title: 'Gown updated',
+        body: '"$name" ($code) was edited',
+        targetType: 'gown',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[GownService.updateGown] $e');
@@ -94,7 +113,22 @@ class GownService {
   /// omitted to avoid exposing the api_secret in the app bundle.
   static Future<bool> deleteGown(String gownId) async {
     try {
+      // Fetch name before deleting for the log
+      final doc = await _collection.doc(gownId).get();
+      final name = doc.data()?['name'] ?? 'Unknown';
+      final code = doc.data()?['code'] ?? '';
+
       await _collection.doc(gownId).delete();
+
+      // Admin log
+      AdminLogService.log(
+        type: AdminLogType.gownDeleted,
+        title: 'Gown deleted',
+        body: '"$name" ($code) was removed from inventory',
+        targetType: null,
+        targetId: null,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[GownService.deleteGown] $e');
@@ -182,6 +216,28 @@ class GownService {
     }
   }
 
+  /// Checks if a gown with the same name already exists (case-insensitive).
+  /// Returns the existing gown's code if found, or null if no duplicate.
+  /// [excludeId] can be passed when editing — to exclude the gown being edited.
+  static Future<String?> checkDuplicateName(String name, {String? excludeId}) async {
+    try {
+      final snapshot = await _collection.get();
+      final normalized = name.trim().toLowerCase();
+
+      for (final doc in snapshot.docs) {
+        if (excludeId != null && doc.id == excludeId) continue;
+        final existingName = (doc.data()['name'] as String? ?? '').trim().toLowerCase();
+        if (existingName == normalized) {
+          return doc.data()['code'] as String? ?? '';
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[GownService.checkDuplicateName] $e');
+      return null;
+    }
+  }
+
   // ── Real-time streams ──────────────────────────────────────────────────────
 
   /// Live stream of all gowns, newest first.
@@ -217,11 +273,23 @@ class GownService {
     required DateTime expectedDate,
   }) async {
     try {
+      final doc = await _collection.doc(gownId).get();
+      final name = doc.data()?['name'] ?? 'Unknown';
+
       await _collection.doc(gownId).update({
         'status': 'cleaning',
         'cleaningStartDate': Timestamp.fromDate(startDate),
         'cleaningExpectedDate': Timestamp.fromDate(expectedDate),
       });
+
+      AdminLogService.log(
+        type: AdminLogType.gownSentCleaning,
+        title: 'Sent to cleaning',
+        body: '"$name" sent for cleaning',
+        targetType: 'cleaning',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[GownService.sendToCleaning] $e');
@@ -232,12 +300,24 @@ class GownService {
   /// Marks a cleaning gown as available and clears cleaning dates.
   static Future<bool> markAsClean(String gownId) async {
     try {
+      final doc = await _collection.doc(gownId).get();
+      final name = doc.data()?['name'] ?? 'Unknown';
+
       await _collection.doc(gownId).update({
         'status': 'available',
         'cleaningStartDate': FieldValue.delete(),
         'cleaningExpectedDate': FieldValue.delete(),
         'rentalReturnDate': FieldValue.delete(),
       });
+
+      AdminLogService.log(
+        type: AdminLogType.gownMarkedClean,
+        title: 'Cleaning done',
+        body: '"$name" is now available',
+        targetType: 'gown',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[GownService.markAsClean] $e');
@@ -275,11 +355,23 @@ class GownService {
     required DateTime expectedDate,
   }) async {
     try {
+      final doc = await _collection.doc(gownId).get();
+      final name = doc.data()?['name'] ?? 'Unknown';
+
       await _collection.doc(gownId).update({
         'status': 'repair',
         'repairStartDate': Timestamp.fromDate(startDate),
         'repairExpectedDate': Timestamp.fromDate(expectedDate),
       });
+
+      AdminLogService.log(
+        type: AdminLogType.gownSentRepair,
+        title: 'Sent to repair',
+        body: '"$name" sent for repair',
+        targetType: 'repair',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[GownService.sendToRepair] $e');
@@ -290,11 +382,23 @@ class GownService {
   /// Marks a repair gown as available and clears repair dates.
   static Future<bool> markRepairDone(String gownId) async {
     try {
+      final doc = await _collection.doc(gownId).get();
+      final name = doc.data()?['name'] ?? 'Unknown';
+
       await _collection.doc(gownId).update({
         'status': 'available',
         'repairStartDate': FieldValue.delete(),
         'repairExpectedDate': FieldValue.delete(),
       });
+
+      AdminLogService.log(
+        type: AdminLogType.gownRepairDone,
+        title: 'Repair done',
+        body: '"$name" is now available',
+        targetType: 'gown',
+        targetId: gownId,
+      );
+
       return true;
     } catch (e) {
       debugPrint('[GownService.markRepairDone] $e');

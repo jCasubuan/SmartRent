@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/services/gown_service.dart';
 import 'package:smart_rent/services/rental_service.dart';
 
@@ -263,9 +264,9 @@ class _OverdueRentalCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: hasImage
-                  ? Image.network(r.gownImageUrl,
-                      width: 70, height: 80, fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _placeholder())
+                  ? CachedImage(
+                      imageUrl: r.gownImageUrl,
+                      width: 70, height: 80, fit: BoxFit.cover)
                   : _placeholder(),
             ),
             const SizedBox(width: 12),
@@ -401,9 +402,9 @@ class _OverdueGownCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: hasImage
-                  ? Image.network(gown.imageUrls.first,
-                      width: 70, height: 80, fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _placeholder())
+                  ? CachedImage(
+                      imageUrl: gown.imageUrls.first,
+                      width: 70, height: 80, fit: BoxFit.cover)
                   : _placeholder(),
             ),
             const SizedBox(width: 12),

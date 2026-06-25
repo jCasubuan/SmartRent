@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/models/category_model.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/widgets/gown_card.dart';
+import 'package:smart_rent/services/category_service.dart';
 import 'package:smart_rent/services/gown_service.dart';
 import 'package:smart_rent/screens/admin/gowns/gown_detail_screen.dart';
 
@@ -22,6 +24,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
   bool _sortDescending = true;
   String _sortLabel = 'Newest First';
 
+  // Category filter
+  List<CategoryModel> _categories = [];
+  String _selectedCategory = 'All';
+
   // Pagination
   static const int _pageSize = 20;
   int _currentPage = 0;
@@ -29,12 +35,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase().trim();
         _currentPage = 0; // Reset to first page on search change
       });
     });
+  }
+
+  Future<void> _loadCategories() async {
+    final cats = await CategoryService.getCategories();
+    if (mounted) {
+      setState(() => _categories = cats);
+    }
   }
 
   @override
@@ -72,6 +86,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
           g.color.toLowerCase().contains(_searchQuery) ||
           g.code.toLowerCase().contains(_searchQuery);
     }).toList();
+  }
+
+  List<GownModel> _applyCategory(List<GownModel> gowns) {
+    if (_selectedCategory == 'All') return gowns;
+    return gowns
+        .where((g) =>
+            g.category.toLowerCase() == _selectedCategory.toLowerCase())
+        .toList();
   }
 
   void _showSortSheet() {
@@ -204,7 +226,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
           // ── Data ──────────────────────────────────────────────────────────
           final allGowns = snapshot.data ?? [];
           final sorted = _applySort(allGowns);
-          final visible = _applySearch(sorted);
+          final filtered = _applyCategory(sorted);
+          final visible = _applySearch(filtered);
 
           final totalGowns = allGowns.length;
           final availableGowns =
@@ -226,11 +249,66 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
               const SizedBox(height: 16),
 
-              // Search bar + sort button
+              // Category dropdown + Search bar + sort button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
+                    // Category dropdown
+                    Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: _selectedCategory != 'All'
+                            ? AppColors.primary.withValues(alpha: 0.08)
+                            : AppColors.surfaceGrey,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: _selectedCategory != 'All'
+                              ? AppColors.primary
+                              : AppColors.border,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedCategory,
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: _selectedCategory != 'All'
+                                ? AppColors.primary
+                                : AppColors.textLight,
+                            size: 18,
+                          ),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedCategory != 'All'
+                                ? AppColors.primary
+                                : AppColors.textDark,
+                          ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: 'All',
+                              child: Text('All'),
+                            ),
+                            ..._categories.map((cat) => DropdownMenuItem(
+                                  value: cat.name,
+                                  child: Text(cat.name),
+                                )),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedCategory = val;
+                                _currentPage = 0;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Search bar
                     Expanded(
                       child: Container(
                         height: 44,
@@ -243,7 +321,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           style: const TextStyle(
                               fontSize: 14, color: AppColors.textDark),
                           decoration: const InputDecoration(
-                            hintText: 'Search by name, category, color...',
+                            hintText: 'Search...',
                             hintStyle: TextStyle(
                                 color: AppColors.textLight, fontSize: 13),
                             prefixIcon: Icon(Icons.search,

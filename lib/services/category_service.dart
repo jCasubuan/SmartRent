@@ -38,10 +38,21 @@ class CategoryService {
   }
 
   /// Adds a new category and returns the created [CategoryModel], or null on failure.
+  /// Returns null if a category with the same name already exists (case-insensitive).
   /// Clears the cache so the next read picks up the new category.
   static Future<CategoryModel?> addCategory(String name) async {
     try {
       final snapshot = await _collection.get();
+
+      // Check for duplicate (case-insensitive)
+      final normalizedName = name.trim().toLowerCase();
+      final exists = snapshot.docs.any((doc) {
+        final existing = (doc.data()['name'] as String? ?? '').trim().toLowerCase();
+        return existing == normalizedName;
+      });
+
+      if (exists) return null;
+
       final order = snapshot.docs.length + 1;
 
       final docRef = await _collection.add({

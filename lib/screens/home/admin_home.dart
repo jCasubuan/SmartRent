@@ -114,14 +114,15 @@ class _AdminHomeState extends State<AdminHome> {
 
   /// Listens to pending rental requests stream and shows a banner when a new one arrives.
   void _listenForNewRequests() {
-    _pendingSub = RentalService.pendingRequestsStream().listen((requests) {
-      final count = requests.length;
+    _pendingSub = RentalService.pendingRequestsStream().listen(
+      (requests) {
+        final count = requests.length;
 
-      // Skip initial load
-      if (_lastPendingCount == -1) {
-        _lastPendingCount = count;
-        return;
-      }
+        // Skip initial load
+        if (_lastPendingCount == -1) {
+          _lastPendingCount = count;
+          return;
+        }
 
       if (count > _lastPendingCount && requests.isNotEmpty) {
         // Find the newest request (first in list, sorted newest-first)
@@ -140,7 +141,11 @@ class _AdminHomeState extends State<AdminHome> {
       }
 
       _lastPendingCount = count;
-    });
+    },
+      onError: (e) {
+        debugPrint('[AdminHome._listenForNewRequests] $e');
+      },
+    );
   }
 
   @override

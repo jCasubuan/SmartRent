@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/services/gown_service.dart';
 import 'package:smart_rent/services/rental_service.dart';
 
@@ -263,10 +264,9 @@ class _RentedCardState extends State<_RentedCard> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: hasImage
-                      ? Image.network(r.gownImageUrl,
-                          width: 80, height: 96, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              _sheetPlaceholder())
+                      ? CachedImage(
+                          imageUrl: r.gownImageUrl,
+                          width: 80, height: 96, fit: BoxFit.cover)
                       : _sheetPlaceholder(),
                 ),
                 const SizedBox(width: 14),
@@ -806,11 +806,10 @@ class _RentedCardState extends State<_RentedCard> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: hasImage
-                        ? Image.network(r.gownImageUrl,
+                        ? CachedImage(
+                            imageUrl: r.gownImageUrl,
                             width: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                _imagePlaceholder())
+                            fit: BoxFit.cover)
                         : _imagePlaceholder(),
                   ),
                   Positioned(

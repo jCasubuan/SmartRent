@@ -51,6 +51,7 @@ class InputField extends StatelessWidget {
         prefixIcon: Icon(prefixIcon, color: AppColors.textLight, size: 20),
         suffixIcon: suffixIcon,
         counterText: '',
+        errorMaxLines: 2,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         enabledBorder: OutlineInputBorder(
