@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
 import 'package:smart_rent/screens/client/request_details_screen.dart';
 import 'package:smart_rent/services/notification_service.dart';
@@ -20,42 +21,43 @@ class NotificationsTab extends StatefulWidget {
 class _NotificationsTabState extends State<NotificationsTab> {
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final user = FirebaseAuth.instance.currentUser;
 
     // ── Guest ──────────────────────────────────────────────────────────────
     if (user == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        appBar: _appBar(),
+        appBar: _appBar(r),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+            padding: EdgeInsets.symmetric(horizontal: r.s(40)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.notifications_off_outlined,
-                    size: 64, color: AppColors.border),
-                const SizedBox(height: 16),
-                const Text(
+                Icon(Icons.notifications_off_outlined,
+                    size: r.s(64), color: AppColors.border),
+                SizedBox(height: r.s(16)),
+                Text(
                   'Sign in to see your notifications',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: r.sp(16),
                     fontWeight: FontWeight.w600,
                     color: AppColors.textDark,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: r.s(8)),
+                Text(
                   'We\'ll let you know here when your booking is confirmed or if there are any updates.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: r.sp(13),
                     color: AppColors.textMid,
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: r.s(28)),
                 ElevatedButton(
                   onPressed: () => Navigator.push(
                     context,
@@ -68,10 +70,10 @@ class _NotificationsTabState extends State<NotificationsTab> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25)),
                   ),
-                  child: const Text(
+                  child: Text(
                     'SIGN IN',
                     style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                        TextStyle(fontSize: r.sp(15), fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -84,7 +86,7 @@ class _NotificationsTabState extends State<NotificationsTab> {
     // ── Logged in ──────────────────────────────────────────────────────────
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _appBar(),
+      appBar: _appBar(r),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: NotificationService.notificationsStream(user.uid),
         builder: (context, snapshot) {
@@ -110,24 +112,24 @@ class _NotificationsTabState extends State<NotificationsTab> {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Icon(Icons.notifications_none_outlined,
-                      size: 64, color: AppColors.border),
-                  SizedBox(height: 16),
+                      size: r.s(64), color: AppColors.border),
+                  SizedBox(height: r.s(16)),
                   Text(
                     'Nothing here yet',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: r.sp(16),
                       fontWeight: FontWeight.w600,
                       color: AppColors.textDark,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: r.s(8)),
                   Text(
                     'When the shop confirms or updates\nyour booking, you\'ll see it here.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: r.sp(13),
                       color: AppColors.textMid,
                       height: 1.5,
                     ),
@@ -149,17 +151,17 @@ class _NotificationsTabState extends State<NotificationsTab> {
               // Mark all as read button
               if (hasUnread)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: EdgeInsets.fromLTRB(r.s(16), r.s(12), r.s(16), 0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       GestureDetector(
                         onTap: () =>
                             NotificationService.markAllRead(user.uid),
-                        child: const Text(
+                        child: Text(
                           'Mark all as read',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: r.sp(12),
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
@@ -170,7 +172,7 @@ class _NotificationsTabState extends State<NotificationsTab> {
                 ),
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  padding: EdgeInsets.fromLTRB(r.s(16), r.s(12), r.s(16), r.s(24)),
                   itemCount: grouped.length,
                   itemBuilder: (context, index) {
                     final section = grouped[index];
@@ -189,17 +191,17 @@ class _NotificationsTabState extends State<NotificationsTab> {
     );
   }
 
-  PreferredSizeWidget _appBar() {
+  PreferredSizeWidget _appBar(Responsive r) {
     return AppBar(
       backgroundColor: AppColors.background,
       elevation: 0,
       centerTitle: true,
-      title: const Text(
+      title: Text(
         'Notifications',
         style: TextStyle(
           color: AppColors.textDark,
           fontWeight: FontWeight.w700,
-          fontSize: 18,
+          fontSize: r.sp(18),
         ),
       ),
     );
@@ -281,15 +283,16 @@ class _DateSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 10),
+          padding: EdgeInsets.only(top: r.s(8), bottom: r.s(10)),
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: r.sp(13),
               fontWeight: FontWeight.w700,
               color: AppColors.textLight,
               letterSpacing: 0.3,
@@ -297,7 +300,7 @@ class _DateSection extends StatelessWidget {
           ),
         ),
         ...notifications.map((notif) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(bottom: r.s(8)),
               child: _NotificationCard(
                 notif: notif,
                 customerId: customerId,
@@ -321,6 +324,7 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final type = notif['type'] as String? ?? 'approved';
     final title = notif['title'] as String? ?? '';
     final body = notif['body'] as String? ?? '';
@@ -356,22 +360,22 @@ class _NotificationCard extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(r.s(14)),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Icon circle
               Container(
-                width: 44,
-                height: 44,
+                width: r.s(44),
+                height: r.s(44),
                 decoration: BoxDecoration(
                   color: iconColor.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(iconData, color: iconColor, size: 22),
+                child: Icon(iconData, color: iconColor, size: r.s(22)),
               ),
 
-              const SizedBox(width: 12),
+              SizedBox(width: r.s(12)),
 
               // Text
               Expanded(
@@ -384,7 +388,7 @@ class _NotificationCard extends StatelessWidget {
                           child: Text(
                             title,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: r.sp(14),
                               fontWeight: isRead
                                   ? FontWeight.w600
                                   : FontWeight.w700,
@@ -394,9 +398,9 @@ class _NotificationCard extends StatelessWidget {
                         ),
                         if (!isRead)
                           Container(
-                            width: 8,
-                            height: 8,
-                            margin: const EdgeInsets.only(right: 4),
+                            width: r.s(8),
+                            height: r.s(8),
+                            margin: EdgeInsets.only(right: r.s(4)),
                             decoration: const BoxDecoration(
                               color: AppColors.primary,
                               shape: BoxShape.circle,
@@ -404,21 +408,21 @@ class _NotificationCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: r.s(4)),
                     Text(
                       body,
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: TextStyle(
+                        fontSize: r.sp(13),
                         color: AppColors.textMid,
                         height: 1.4,
                       ),
                     ),
                     if (timeStr.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+                      SizedBox(height: r.s(6)),
                       Text(
                         timeStr,
-                        style: const TextStyle(
-                          fontSize: 11,
+                        style: TextStyle(
+                          fontSize: r.sp(11),
                           color: AppColors.textLight,
                         ),
                       ),
@@ -598,43 +602,44 @@ class _MoreMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return PopupMenuButton<String>(
       onSelected: (value) {
         if (value == 'read') onMarkRead();
         if (value == 'delete') onDelete();
       },
-      icon: const Icon(
+      icon: Icon(
         Icons.more_vert,
         color: AppColors.textLight,
-        size: 20,
+        size: r.s(20),
       ),
       padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+      constraints: BoxConstraints(minWidth: r.s(28), minHeight: r.s(28)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       itemBuilder: (context) => [
         if (!isRead)
-          const PopupMenuItem<String>(
+          PopupMenuItem<String>(
             value: 'read',
             child: Row(
               children: [
-                Icon(Icons.done, size: 18, color: AppColors.primary),
-                SizedBox(width: 8),
+                Icon(Icons.done, size: r.s(18), color: AppColors.primary),
+                SizedBox(width: r.s(8)),
                 Text(
                   'Mark as read',
-                  style: TextStyle(fontSize: 13),
+                  style: TextStyle(fontSize: r.sp(13)),
                 ),
               ],
             ),
           ),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-              SizedBox(width: 8),
+              Icon(Icons.delete_outline, size: r.s(18), color: AppColors.error),
+              SizedBox(width: r.s(8)),
               Text(
                 'Delete',
-                style: TextStyle(fontSize: 13, color: AppColors.error),
+                style: TextStyle(fontSize: r.sp(13), color: AppColors.error),
               ),
             ],
           ),

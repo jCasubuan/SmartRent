@@ -94,7 +94,11 @@ class StatsService {
         if (status == 'rented') {
           final returnDate =
               (data['rentalReturnDate'] as Timestamp?)?.toDate();
-          if (returnDate != null && returnDate.isBefore(now)) count++;
+          if (returnDate != null) {
+            final returnDay = DateTime(returnDate.year, returnDate.month, returnDate.day);
+            final today = DateTime(now.year, now.month, now.day);
+            if (today.isAfter(returnDay)) count++;
+          }
         } else if (status == 'cleaning') {
           final expected =
               (data['cleaningExpectedDate'] as Timestamp?)?.toDate();

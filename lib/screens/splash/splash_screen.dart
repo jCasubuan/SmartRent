@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
 import 'package:smart_rent/screens/home/client_home.dart';
 import 'package:smart_rent/screens/home/admin_home.dart';
@@ -85,19 +86,20 @@ class _SplashContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Image.asset(
           'assets/icons/smart_rent_logo.jpg',
-          width: 260,
+          width: r.s(260),
           fit: BoxFit.contain,
         ),
-        const SizedBox(height: 48),
-        const SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
+        SizedBox(height: r.s(48)),
+        SizedBox(
+          width: r.s(24),
+          height: r.s(24),
+          child: const CircularProgressIndicator(
             strokeWidth: 2.5,
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),

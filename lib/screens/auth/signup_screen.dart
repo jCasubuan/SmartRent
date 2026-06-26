@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
 import 'package:smart_rent/controllers/signup_controller.dart';
 import 'package:smart_rent/screens/auth/signin_screen.dart';
@@ -112,6 +113,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
@@ -125,12 +127,12 @@ class _SignupScreenState extends State<SignupScreen> {
             Navigator.pop(context);
           },
         ),
-        title: const Text(
+        title: Text(
           'Create Account',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
@@ -142,17 +144,17 @@ class _SignupScreenState extends State<SignupScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    EdgeInsets.symmetric(horizontal: r.s(24), vertical: r.s(16)),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 8),
+                      SizedBox(height: r.s(8)),
 
                       // Form card
                       Container(
-                        padding: const EdgeInsets.all(24),
+                        padding: EdgeInsets.all(r.s(24)),
                         decoration: BoxDecoration(
                           color: AppColors.background,
                           borderRadius: BorderRadius.circular(16),
@@ -170,7 +172,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           children: [
                             // Name
                             const FieldLabel(label: 'Name'),
-                            const SizedBox(height: 8),
+                            SizedBox(height: r.s(8)),
                             InputField(
                               controller: _nameController,
                               hint: 'Full Name',
@@ -184,11 +186,11 @@ class _SignupScreenState extends State<SignupScreen> {
                               validator: _controller.validateName,
                             ),
 
-                            const SizedBox(height: 20),
+                            SizedBox(height: r.s(20)),
 
                             // Email
                             const FieldLabel(label: 'Email'),
-                            const SizedBox(height: 8),
+                            SizedBox(height: r.s(8)),
                             InputField(
                               controller: _emailController,
                               hint: 'example@gmail.com',
@@ -202,11 +204,11 @@ class _SignupScreenState extends State<SignupScreen> {
                               validator: _controller.validateEmail,
                             ),
 
-                            const SizedBox(height: 20),
+                            SizedBox(height: r.s(20)),
 
                             // Password
                             const FieldLabel(label: 'Password'),
-                            const SizedBox(height: 8),
+                            SizedBox(height: r.s(8)),
                             InputField(
                               controller: _passwordController,
                               hint: '••••••••••',
@@ -218,7 +220,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
                                   color: AppColors.textLight,
-                                  size: 20,
+                                  size: r.s(20),
                                 ),
                                 onPressed: () => setState(
                                     () => _obscurePassword = !_obscurePassword),
@@ -226,11 +228,11 @@ class _SignupScreenState extends State<SignupScreen> {
                               validator: _controller.validatePassword,
                             ),
 
-                            const SizedBox(height: 20),
+                            SizedBox(height: r.s(20)),
 
                             // Confirm Password
                             const FieldLabel(label: 'Confirm Password'),
-                            const SizedBox(height: 8),
+                            SizedBox(height: r.s(8)),
                             InputField(
                               controller: _confirmPasswordController,
                               hint: '••••••••••',
@@ -242,7 +244,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
                                   color: AppColors.textLight,
-                                  size: 20,
+                                  size: r.s(20),
                                 ),
                                 onPressed: () => setState(() =>
                                     _obscureConfirmPassword =
@@ -253,12 +255,12 @@ class _SignupScreenState extends State<SignupScreen> {
                                       val, _passwordController.text),
                             ),
 
-                            const SizedBox(height: 28),
+                            SizedBox(height: r.s(28)),
 
                             // Create Account button
                             SizedBox(
                               width: double.infinity,
-                              height: 52,
+                              height: r.s(52),
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _handleSignup,
                                 style: ElevatedButton.styleFrom(
@@ -272,20 +274,20 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                 ),
                                 child: _isLoading
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
+                                    ? SizedBox(
+                                        width: r.s(22),
+                                        height: r.s(22),
+                                        child: const CircularProgressIndicator(
                                           strokeWidth: 2.5,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
                                                   AppColors.defaultForeground),
                                         ),
                                       )
-                                    : const Text(
+                                    : Text(
                                         'Create Account',
                                         style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: r.sp(15),
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 0.5,
                                         ),
@@ -296,45 +298,47 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: r.s(24)),
 
                       // Terms and Privacy
                       RichText(
                         textAlign: TextAlign.center,
-                        text: const TextSpan(
+                        text: TextSpan(
                           text: 'By clicking continue, you agree to our ',
                           style: TextStyle(
-                              fontSize: 11, color: AppColors.textLight),
+                              fontSize: r.sp(11), color: AppColors.textLight),
                           children: [
                             TextSpan(
                               text: 'Terms of Service',
                               style: TextStyle(
                                 color: AppColors.primary,
                                 decoration: TextDecoration.underline,
+                                fontSize: r.sp(11),
                               ),
                             ),
-                            TextSpan(text: ' and '),
+                            const TextSpan(text: ' and '),
                             TextSpan(
                               text: 'Privacy Policy',
                               style: TextStyle(
                                 color: AppColors.primary,
                                 decoration: TextDecoration.underline,
+                                fontSize: r.sp(11),
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: r.s(20)),
 
                       // Already have an account
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'Already have an account? ',
                             style: TextStyle(
-                                fontSize: 13, color: AppColors.textLight),
+                                fontSize: r.sp(13), color: AppColors.textLight),
                           ),
                           GestureDetector(
                             onTap: () {
@@ -345,10 +349,10 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ),
                               );
                             },
-                            child: const Text(
+                            child: Text(
                               'Sign In',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: r.sp(13),
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -357,7 +361,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: r.s(16)),
                     ],
                   ),
                 ),

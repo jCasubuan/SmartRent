@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 
 class StatSummaryCard extends StatelessWidget {
   final int totalGowns;
@@ -15,9 +16,10 @@ class StatSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: EdgeInsets.symmetric(vertical: r.s(20), horizontal: r.s(16)),
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(16),
@@ -51,21 +53,22 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Column(
       children: [
         Text(
           value.toString(),
-          style: const TextStyle(
-            fontSize: 24,
+          style: TextStyle(
+            fontSize: r.sp(24),
             fontWeight: FontWeight.w800,
             color: AppColors.textDark,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: r.s(4)),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: r.sp(11),
             color: AppColors.textLight,
             fontWeight: FontWeight.w500,
           ),
@@ -78,9 +81,10 @@ class _StatItem extends StatelessWidget {
 class _VerticalDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Container(
       width: 1,
-      height: 36,
+      height: r.s(36),
       color: AppColors.border,
     );
   }

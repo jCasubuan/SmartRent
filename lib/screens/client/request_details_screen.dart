@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/core/widgets/field_label.dart';
 import 'package:smart_rent/services/rental_service.dart';
@@ -105,6 +106,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final resp = Responsive(context);
     final r = _rental;
     final statusColor = AppColors.rentalStatusColor(r.status);
     final hasImage = r.gownImageUrl.isNotEmpty;
@@ -118,36 +120,36 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
           icon: const Icon(Icons.close, color: AppColors.textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Request Details',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: resp.sp(18),
           ),
         ),
         centerTitle: true,
         actions: [
           if (_isPending)
             Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: EdgeInsets.only(right: resp.s(12)),
               child: ElevatedButton(
                 onPressed: _openModify,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.defaultForeground,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: resp.s(16), vertical: resp.s(8)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Modify',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                    fontSize: resp.sp(14),
                   ),
                 ),
               ),
@@ -155,7 +157,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        padding: EdgeInsets.fromLTRB(resp.s(20), resp.s(8), resp.s(20), resp.s(32)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -175,13 +177,13 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                                       ? 'No-show — Booking Cancelled'
                                       : 'Cancelled',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: resp.sp(18),
                 fontWeight: FontWeight.w700,
                 color: statusColor,
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: resp.s(16)),
 
             // Image + details row
             Row(
@@ -193,14 +195,14 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   child: hasImage
                       ? CachedImage(
                           imageUrl: r.gownImageUrl,
-                          width: 140,
-                          height: 180,
+                          width: resp.s(140),
+                          height: resp.s(180),
                           fit: BoxFit.cover,
                         )
-                      : _imagePlaceholder(),
+                      : _imagePlaceholder(resp),
                 ),
 
-                const SizedBox(width: 16),
+                SizedBox(width: resp.s(16)),
 
                 // Details
                 Expanded(
@@ -208,32 +210,32 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Gown Details section
-                      const Text(
+                      Text(
                         'Gown Details',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: resp.sp(14),
                           fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: resp.s(6)),
                       _DetailLine('Category', r.gownCategory),
                       _DetailLine('Color', r.gownColor),
                       _DetailLine(
                           'Price', '₱${PriceFormatter.format(r.gownPrice)}'),
 
-                      const SizedBox(height: 14),
+                      SizedBox(height: resp.s(14)),
 
                       // Rental Details section
-                      const Text(
+                      Text(
                         'Rental Details',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: resp.sp(14),
                           fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: resp.s(6)),
                       _DetailLine('Gown', r.gownName),
                       _DetailLine('Pick up', _formatDate(r.pickupDate)),
                       _DetailLine('Return', _formatDate(r.returnDate)),
@@ -243,55 +245,55 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
               ],
             ),
 
-            const SizedBox(height: 20),
+            SizedBox(height: resp.s(20)),
             const Divider(color: AppColors.border),
-            const SizedBox(height: 16),
+            SizedBox(height: resp.s(16)),
 
             // Customer info
-            const Text(
+            Text(
               'Your Information',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: resp.sp(14),
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: resp.s(8)),
             _DetailLine('Name', r.customerName),
             _DetailLine('Phone', r.phone),
 
             // Cancellation reason (if cancelled)
             if (r.status == 'cancelled' &&
                 r.cancellationReason != null) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: resp.s(16)),
               const Divider(color: AppColors.border),
-              const SizedBox(height: 12),
-              const Text(
+              SizedBox(height: resp.s(12)),
+              Text(
                 'Cancellation Reason',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: resp.sp(14),
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
                 ),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: resp.s(6)),
               Text(
                 r.cancellationReason!,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: resp.sp(14),
                   color: AppColors.textMid,
                   height: 1.5,
                 ),
               ),
             ],
 
-            const SizedBox(height: 32),
+            SizedBox(height: resp.s(32)),
 
             // Cancel Request button — only for pending
             if (_isPending)
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: resp.s(52),
                 child: ElevatedButton(
                   onPressed: _isProcessing ? null : _showCancelSheet,
                   style: ElevatedButton.styleFrom(
@@ -302,10 +304,10 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Cancel Request',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: resp.sp(16),
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
@@ -318,16 +320,16 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
     );
   }
 
-  Widget _imagePlaceholder() {
+  Widget _imagePlaceholder(Responsive resp) {
     return Container(
-      width: 140,
-      height: 180,
+      width: resp.s(140),
+      height: resp.s(180),
       decoration: BoxDecoration(
         color: AppColors.surfaceGrey,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Icon(Icons.checkroom_outlined,
-          color: AppColors.border, size: 40),
+      child: Icon(Icons.checkroom_outlined,
+          color: AppColors.border, size: resp.s(40)),
     );
   }
 }
@@ -342,11 +344,12 @@ class _DetailLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: EdgeInsets.only(bottom: r.s(4)),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(fontSize: 13, height: 1.5),
+          style: TextStyle(fontSize: r.sp(13), height: 1.5),
           children: [
             TextSpan(
               text: '$label: ',
@@ -607,7 +610,9 @@ class _ModifyRequestScreenState extends State<_ModifyRequestScreen> {
   Future<void> _pickDate({required bool isPickup}) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final firstDate = isPickup ? today : (_pickupDate ?? today);
+    final firstDate = isPickup
+        ? today
+        : (_pickupDate?.add(const Duration(days: 1)) ?? today.add(const Duration(days: 1)));
     final initialDate = isPickup
         ? (_pickupDate ?? today)
         : (_returnDate ?? firstDate);
@@ -647,25 +652,20 @@ class _ModifyRequestScreenState extends State<_ModifyRequestScreen> {
       return 'Please enter your phone number';
     }
     final v = value.trim();
-    if (v.indexOf('+') > 0) {
-      return 'Please use the format: 09XXXXXXXXX or +639XXXXXXXXX';
+    if (v.length != 11) {
+      return 'Phone number must be exactly 11 digits';
     }
-    if (v.startsWith('+63')) {
-      if (!RegExp(r'^9\d{9}$').hasMatch(v.substring(3))) {
-        return 'Please use the format: +639XXXXXXXXX';
-      }
-      return null;
+    if (!v.startsWith('09')) {
+      return 'Phone number must start with 09';
     }
     if (!RegExp(r'^09\d{9}$').hasMatch(v)) {
-      return 'Please enter a valid 11-digit number starting with 09';
+      return 'Please enter a valid phone number';
     }
     return null;
   }
 
   String _normalisePhone(String value) {
-    final v = value.trim();
-    if (v.startsWith('+63')) return '0${v.substring(3)}';
-    return v;
+    return value.trim();
   }
 
   Future<void> _save() async {
@@ -796,6 +796,11 @@ class _ModifyRequestScreenState extends State<_ModifyRequestScreen> {
                 TextFormField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
+                  maxLength: 50,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-ZÀ-ÿ\s'\-\.]")),
+                  ],
                   style: const TextStyle(
                       fontSize: 14, color: AppColors.textDark),
                   decoration: _inputDecoration('Enter full name'),
@@ -807,8 +812,14 @@ class _ModifyRequestScreenState extends State<_ModifyRequestScreen> {
                     if (name.length < 2) {
                       return 'Name must be at least 2 characters';
                     }
-                    if (!RegExp(r"^[a-zA-ZÀ-ÿ\s'\-\.]+$").hasMatch(name)) {
-                      return 'Name should only contain letters';
+                    if (!RegExp(r'^[a-zA-ZÀ-ÿ]').hasMatch(name)) {
+                      return 'Name must start with a letter';
+                    }
+                    if (!RegExp(r'[a-zA-ZÀ-ÿ]$').hasMatch(name)) {
+                      return 'Name must end with a letter';
+                    }
+                    if (name.replaceAll(RegExp(r'[^a-zA-ZÀ-ÿ]'), '').length < 2) {
+                      return 'Name must contain at least 2 letters';
                     }
                     return null;
                   },
@@ -822,13 +833,13 @@ class _ModifyRequestScreenState extends State<_ModifyRequestScreen> {
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d+]')),
-                    LengthLimitingTextInputFormatter(13),
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(11),
                   ],
                   style: const TextStyle(
                       fontSize: 14, color: AppColors.textDark),
                   decoration:
-                      _inputDecoration('09XXXXXXXXX or +639XXXXXXXXX'),
+                      _inputDecoration('09XXXXXXXXX'),
                   validator: _validatePhone,
                 ),
 

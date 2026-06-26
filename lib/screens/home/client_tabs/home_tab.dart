@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/category_model.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/gown_card.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
 import 'package:smart_rent/screens/client/bookmarks_screen.dart';
@@ -163,6 +164,7 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final user = FirebaseAuth.instance.currentUser;
     final isLoggedIn = user != null;
 
@@ -182,12 +184,12 @@ class _HomeTabState extends State<HomeTab> {
               // â”€â”€ Top bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: EdgeInsets.fromLTRB(r.s(16), r.s(16), r.s(16), r.s(8)),
                   child: Row(
                     children: [
                       Expanded(
                         child: Container(
-                          height: 44,
+                          height: r.s(44),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceGrey,
                             borderRadius: BorderRadius.circular(22),
@@ -195,27 +197,27 @@ class _HomeTabState extends State<HomeTab> {
                           child: TextField(
                             controller: _searchController,
                             maxLength: 50,
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style: TextStyle(
+                              fontSize: r.sp(14),
                               color: AppColors.textDark,
                             ),
                             decoration: InputDecoration(
                               hintText: 'Search by name, category, color...',
-                              hintStyle: const TextStyle(
+                              hintStyle: TextStyle(
                                 color: AppColors.textLight,
-                                fontSize: 13,
+                                fontSize: r.sp(13),
                               ),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.search,
                                 color: AppColors.textLight,
-                                size: 20,
+                                size: r.s(20),
                               ),
                               suffixIcon: _isSearching
                                   ? IconButton(
-                                      icon: const Icon(
+                                      icon: Icon(
                                         Icons.close,
                                         color: AppColors.textLight,
-                                        size: 18,
+                                        size: r.s(18),
                                       ),
                                       onPressed: () =>
                                           _searchController.clear(),
@@ -224,12 +226,12 @@ class _HomeTabState extends State<HomeTab> {
                               border: InputBorder.none,
                               counterText: '',
                               contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 12),
+                                  EdgeInsets.symmetric(vertical: r.s(12)),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: r.s(10)),
                       if (isLoggedIn)
                         IconButton(
                           onPressed: () async {
@@ -241,33 +243,33 @@ class _HomeTabState extends State<HomeTab> {
                             );
                             _refreshBookmarks();
                           },
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.bookmark_border,
                             color: AppColors.primary,
-                            size: 26,
+                            size: r.s(26),
                           ),
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
+                          constraints: BoxConstraints(
+                            minWidth: r.s(36),
+                            minHeight: r.s(36),
                           ),
                         )
                       else ...[
                         IconButton(
                           onPressed: () =>
                               _showLoginPrompt(context, 'view your bookmarks'),
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.bookmark_border,
                             color: AppColors.textLight,
-                            size: 26,
+                            size: r.s(26),
                           ),
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
+                          constraints: BoxConstraints(
+                            minWidth: r.s(36),
+                            minHeight: r.s(36),
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: r.s(4)),
                         ElevatedButton(
                           onPressed: () => Navigator.push(
                             context,
@@ -279,18 +281,18 @@ class _HomeTabState extends State<HomeTab> {
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.defaultForeground,
                             elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: r.s(14),
+                              vertical: r.s(10),
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Login',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -305,12 +307,12 @@ class _HomeTabState extends State<HomeTab> {
               if (!_isSearching)
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 40,
+                    height: r.s(40),
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: r.s(16)),
                       itemCount: _categories.length + 1,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => SizedBox(width: r.s(8)),
                       itemBuilder: (context, index) {
                         final filter = index == 0
                             ? 'All'
@@ -320,9 +322,9 @@ class _HomeTabState extends State<HomeTab> {
                           onTap: () =>
                               setState(() => _selectedFilter = filter),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: r.s(16),
+                              vertical: r.s(8),
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
@@ -338,7 +340,7 @@ class _HomeTabState extends State<HomeTab> {
                             child: Text(
                               filter,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: r.sp(13),
                                 fontWeight: FontWeight.w500,
                                 color: isSelected
                                     ? AppColors.defaultForeground
@@ -366,39 +368,39 @@ class _HomeTabState extends State<HomeTab> {
                 SliverFillRemaining(
                   child: Center(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      padding: EdgeInsets.symmetric(horizontal: r.s(32)),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.wifi_off_outlined,
-                              size: 52, color: AppColors.border),
-                          const SizedBox(height: 16),
-                          const Text(
+                          Icon(Icons.wifi_off_outlined,
+                              size: r.s(52), color: AppColors.border),
+                          SizedBox(height: r.s(16)),
+                          Text(
                             'No internet connection',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: r.sp(16),
                               fontWeight: FontWeight.w600,
                               color: AppColors.textDark,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
+                          SizedBox(height: r.s(8)),
+                          Text(
                             'Please check your connection and try again.',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               color: AppColors.textMid,
                               height: 1.5,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: r.s(24)),
                           ElevatedButton.icon(
                             onPressed: _onRefresh,
-                            icon: const Icon(Icons.refresh, size: 18),
-                            label: const Text(
+                            icon: Icon(Icons.refresh, size: r.s(18)),
+                            label: Text(
                               'Try Again',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: r.sp(14)),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
@@ -424,8 +426,8 @@ class _HomeTabState extends State<HomeTab> {
                           child: Center(
                             child: Text(
                               'No gowns found for "${_searchController.text}"',
-                              style: const TextStyle(
-                                fontSize: 14,
+                              style: TextStyle(
+                                fontSize: r.sp(14),
                                 color: AppColors.textLight,
                               ),
                               textAlign: TextAlign.center,
@@ -433,14 +435,14 @@ class _HomeTabState extends State<HomeTab> {
                           ),
                         )
                       : SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: EdgeInsets.symmetric(horizontal: r.s(16)),
                           sliver: SliverGrid(
                             gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              mainAxisExtent: 270,
+                              crossAxisSpacing: r.s(12),
+                              mainAxisSpacing: r.s(12),
+                              mainAxisExtent: r.s(270),
                             ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) => _buildGownCard(
@@ -477,14 +479,14 @@ class _HomeTabState extends State<HomeTab> {
                     );
                   }
                   return SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: r.s(16)),
                     sliver: SliverGrid(
                       gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                          SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        mainAxisExtent: 270,
+                        crossAxisSpacing: r.s(12),
+                        mainAxisSpacing: r.s(12),
+                        mainAxisExtent: r.s(270),
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => _buildGownCard(
@@ -510,46 +512,46 @@ class _HomeTabState extends State<HomeTab> {
                         children: [
                           Padding(
                             padding:
-                                const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                EdgeInsets.fromLTRB(r.s(16), 0, r.s(16), r.s(12)),
                             child: Row(
                               mainAxisAlignment:
                                   MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   category.name,
-                                  style: const TextStyle(
-                                    fontSize: 16,
+                                  style: TextStyle(
+                                    fontSize: r.sp(16),
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.textDark,
                                   ),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right,
                                   color: AppColors.primary,
-                                  size: 20,
+                                  size: r.s(20),
                                 ),
                               ],
                             ),
                           ),
                           Padding(
                             padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                                EdgeInsets.symmetric(horizontal: r.s(16)),
                             child: GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                  SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                mainAxisExtent: 270,
+                                crossAxisSpacing: r.s(12),
+                                mainAxisSpacing: r.s(12),
+                                mainAxisExtent: r.s(270),
                               ),
                               itemCount: gowns.length,
                               itemBuilder: (context, i) =>
                                   _buildGownCard(context, gowns[i], isLoggedIn),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: r.s(24)),
                         ],
                       );
                     },

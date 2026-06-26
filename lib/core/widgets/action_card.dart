@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 
 class ActionCard extends StatelessWidget {
   final String label;
@@ -15,6 +16,7 @@ class ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -33,12 +35,11 @@ class ActionCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             icon,
-            const SizedBox(height: 8),
+            SizedBox(height: r.s(8)),
             Text(
               label,
-
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: r.sp(15),
                 fontWeight: FontWeight.w600,
                 color: AppColors.textDark,
               ),

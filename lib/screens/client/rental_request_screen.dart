@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/field_label.dart';
 import 'package:smart_rent/services/rental_service.dart';
 
@@ -71,8 +72,10 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // Pick-up: minimum today. Return: minimum = pickup date or today.
-    final firstDate = isPickup ? today : (_pickupDate ?? today);
+    // Pick-up: minimum today. Return: minimum = pickup date + 1 day (no same-day returns).
+    final firstDate = isPickup
+        ? today
+        : (_pickupDate?.add(const Duration(days: 1)) ?? today.add(const Duration(days: 1)));
     final initialDate = isPickup
         ? (_pickupDate ?? today)
         : (_returnDate ?? firstDate);
@@ -210,27 +213,20 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
       return 'Please enter your phone number';
     }
     final v = value.trim();
-    // Must not have + anywhere except the very start
-    if (v.indexOf('+') > 0) {
-      return 'Please use the format: 09XXXXXXXXX or +639XXXXXXXXX';
+    if (v.length != 11) {
+      return 'Phone number must be exactly 11 digits';
     }
-    if (v.startsWith('+63')) {
-      final rest = v.substring(3);
-      if (!RegExp(r'^9\d{9}$').hasMatch(rest)) {
-        return 'Please use the format: +639XXXXXXXXX';
-      }
-      return null;
+    if (!v.startsWith('09')) {
+      return 'Phone number must start with 09';
     }
     if (!RegExp(r'^09\d{9}$').hasMatch(v)) {
-      return 'Please enter a valid 11-digit number starting with 09';
+      return 'Please enter a valid phone number';
     }
     return null;
   }
 
   String _normalisePhone(String value) {
-    final v = value.trim();
-    if (v.startsWith('+63')) return '0${v.substring(3)}';
-    return v;
+    return value.trim();
   }
 
   // ── Submit flow ────────────────────────────────────────────────────────────
@@ -461,7 +457,7 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.pop(context);
+              Navigator.pop(context, true); // Signal successful submission
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -484,29 +480,30 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios,
+              color: AppColors.textDark, size: r.s(20)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Rental Request',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          padding: EdgeInsets.fromLTRB(r.s(24), r.s(16), r.s(24), r.s(32)),
           child: Form(
             key: _formKey,
             child: Column(
@@ -516,7 +513,7 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                 // ── Gown summary card ──────────────────────────────────────
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(r.s(16)),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceGrey,
                     borderRadius: BorderRadius.circular(12),
@@ -529,42 +526,42 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                         child: widget.gown.imageUrls.isNotEmpty
                             ? Image.network(
                                 widget.gown.imageUrls.first,
-                                width: 60,
-                                height: 60,
+                                width: r.s(60),
+                                height: r.s(60),
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, _, _) =>
-                                    _imagePlaceholder(),
+                                    _imagePlaceholder(r),
                               )
-                            : _imagePlaceholder(),
+                            : _imagePlaceholder(r),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: r.s(12)),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               widget.gown.name,
-                              style: const TextStyle(
-                                fontSize: 15,
+                              style: TextStyle(
+                                fontSize: r.sp(15),
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textDark,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 2),
+                            SizedBox(height: r.s(2)),
                             Text(
                               '₱${PriceFormatter.format(widget.gown.rentalPrice)}',
-                              style: const TextStyle(
-                                fontSize: 14,
+                              style: TextStyle(
+                                fontSize: r.sp(14),
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
                               ),
                             ),
                             Text(
                               widget.gown.category,
-                              style: const TextStyle(
-                                fontSize: 12,
+                              style: TextStyle(
+                                fontSize: r.sp(12),
                                 color: AppColors.textLight,
                               ),
                             ),
@@ -575,7 +572,7 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 28),
+                SizedBox(height: r.s(28)),
 
                 // ── Gown Name (read-only) ──────────────────────────────────
                 const FieldLabel(label: 'GOWN NAME'),
@@ -606,8 +603,14 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                     if (name.length < 2) {
                       return 'Name must be at least 2 characters';
                     }
-                    if (!RegExp(r"^[a-zA-ZÀ-ÿ\s'\-\.]+$").hasMatch(name)) {
-                      return 'Name should only contain letters';
+                    if (!RegExp(r'^[a-zA-ZÀ-ÿ]').hasMatch(name)) {
+                      return 'Name must start with a letter';
+                    }
+                    if (!RegExp(r'[a-zA-ZÀ-ÿ]$').hasMatch(name)) {
+                      return 'Name must end with a letter';
+                    }
+                    if (name.replaceAll(RegExp(r'[^a-zA-ZÀ-ÿ]'), '').length < 2) {
+                      return 'Name must contain at least 2 letters';
                     }
                     return null;
                   },
@@ -622,14 +625,13 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d+]')),
-                    // Max 13 chars covers +639XXXXXXXXX (13) and 09XXXXXXXXX (11)
-                    LengthLimitingTextInputFormatter(13),
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(11),
                   ],
                   style: const TextStyle(
                       fontSize: 14, color: AppColors.textDark),
                   decoration:
-                      _inputDecoration('09XXXXXXXXX or +639XXXXXXXXX'),
+                      _inputDecoration('09XXXXXXXXX'),
                   validator: _validatePhone,
                 ),
 
@@ -686,7 +688,7 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                 // ── Submit button ──────────────────────────────────────────
                 SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: r.s(52),
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _onSubmitPressed,
                     style: ElevatedButton.styleFrom(
@@ -700,19 +702,19 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
                       ),
                     ),
                     child: _isSubmitting
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
+                        ? SizedBox(
+                            width: r.s(22),
+                            height: r.s(22),
+                            child: const CircularProgressIndicator(
                               strokeWidth: 2.5,
                               valueColor: AlwaysStoppedAnimation<Color>(
                                   AppColors.defaultForeground),
                             ),
                           )
-                        : const Text(
+                        : Text(
                             'Submit Request',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: r.sp(16),
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
                             ),
@@ -755,13 +757,13 @@ class _RentalRequestScreenState extends State<RentalRequestScreen> {
     );
   }
 
-  Widget _imagePlaceholder() {
+  Widget _imagePlaceholder(Responsive r) {
     return Container(
-      width: 60,
-      height: 60,
+      width: r.s(60),
+      height: r.s(60),
       color: AppColors.border,
-      child: const Icon(Icons.checkroom_outlined,
-          color: AppColors.background, size: 28),
+      child: Icon(Icons.checkroom_outlined,
+          color: AppColors.background, size: r.s(28)),
     );
   }
 }

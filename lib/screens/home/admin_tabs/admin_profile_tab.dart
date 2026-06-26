@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/utils/logout_helper.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 
 class AdminProfileTab extends StatefulWidget {
   const AdminProfileTab({super.key});
@@ -195,29 +196,30 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       appBar: AppBar(
         backgroundColor: AppColors.surfaceGrey,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Profile',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+        padding: EdgeInsets.fromLTRB(r.s(20), r.s(16), r.s(20), r.s(40)),
         child: Column(
           children: [
             // ── Profile card ─────────────────────────────────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(r.s(20)),
               decoration: BoxDecoration(
                 color: AppColors.background,
                 borderRadius: BorderRadius.circular(16),
@@ -233,47 +235,47 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                 children: [
                   // Avatar
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: r.s(80),
+                    height: r.s(80),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.admin_panel_settings_outlined,
-                      size: 40,
+                      size: r.s(40),
                       color: AppColors.primary,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: r.s(14)),
                   Text(
                     _name,
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: TextStyle(
+                      fontSize: r.sp(18),
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: r.s(4)),
                   Text(
                     _email,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: r.sp(13),
                       color: AppColors.textMid,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: r.s(6)),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: r.s(12), vertical: r.s(4)),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Admin',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: r.sp(11),
                         fontWeight: FontWeight.w700,
                         color: AppColors.primary,
                         letterSpacing: 0.5,
@@ -284,7 +286,7 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: r.s(24)),
 
             // ── Account section ──────────────────────────────────────────
             _SectionCard(
@@ -298,7 +300,7 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
               ],
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: r.s(16)),
 
             // ── About section ────────────────────────────────────────────
             _SectionCard(
@@ -309,8 +311,8 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                   label: 'App Version',
                   trailing: Text(
                     _appVersion.isEmpty ? '...' : _appVersion,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: r.sp(13),
                       color: AppColors.textLight,
                     ),
                   ),
@@ -318,19 +320,19 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
               ],
             ),
 
-            const SizedBox(height: 32),
+            SizedBox(height: r.s(32)),
 
             // ── Logout button ────────────────────────────────────────────
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: r.s(50),
               child: OutlinedButton.icon(
                 onPressed: _handleLogout,
-                icon: const Icon(Icons.logout_outlined, size: 20),
-                label: const Text(
+                icon: Icon(Icons.logout_outlined, size: r.s(20)),
+                label: Text(
                   'LOG OUT',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: r.sp(15),
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                   ),
@@ -362,6 +364,7 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -379,11 +382,11 @@ class _SectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+            padding: EdgeInsets.fromLTRB(r.s(16), r.s(14), r.s(16), r.s(4)),
             child: Text(
               title,
-              style: const TextStyle(
-                fontSize: 13,
+              style: TextStyle(
+                fontSize: r.sp(13),
                 fontWeight: FontWeight.w700,
                 color: AppColors.textLight,
                 letterSpacing: 0.3,
@@ -391,7 +394,7 @@ class _SectionCard extends StatelessWidget {
             ),
           ),
           ...children,
-          const SizedBox(height: 4),
+          SizedBox(height: r.s(4)),
         ],
       ),
     );
@@ -415,28 +418,29 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: r.s(16), vertical: r.s(14)),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: AppColors.textMid),
-            const SizedBox(width: 14),
+            Icon(icon, size: r.s(22), color: AppColors.textMid),
+            SizedBox(width: r.s(14)),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: r.sp(14),
                   fontWeight: FontWeight.w500,
                   color: AppColors.textDark,
                 ),
               ),
             ),
             trailing ??
-                const Icon(Icons.chevron_right,
-                    size: 20, color: AppColors.textLight),
+                Icon(Icons.chevron_right,
+                    size: r.s(20), color: AppColors.textLight),
           ],
         ),
       ),

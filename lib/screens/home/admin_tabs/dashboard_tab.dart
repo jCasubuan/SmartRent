@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/action_card.dart';
 import 'package:smart_rent/core/widgets/stat_summary_card.dart';
 import 'package:smart_rent/screens/admin/cleaning/cleaning_screen.dart';
@@ -17,9 +18,10 @@ class DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+      padding: EdgeInsets.fromLTRB(r.s(20), r.s(20), r.s(20), r.s(30)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -30,24 +32,24 @@ class DashboardTab extends StatelessWidget {
             children: [
               Image.asset(
                 'assets/icons/smart_rent_logo.png',
-                height: 70,
+                height: r.s(70),
                 fit: BoxFit.contain,
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(horizontal: r.s(12), vertical: r.s(6)),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceMidGrey,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.person_outline, color: AppColors.textLight, size: 16),
-                    SizedBox(width: 6),
+                    Icon(Icons.person_outline, color: AppColors.textLight, size: r.s(16)),
+                    SizedBox(width: r.s(6)),
                     Text(
                       'Admin',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: r.sp(13),
                         fontWeight: FontWeight.w600,
                         color: AppColors.textDark,
                       ),
@@ -58,29 +60,27 @@ class DashboardTab extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 10),
+          SizedBox(height: r.s(10)),
           const _DashboardSubTitle(title: 'Dashboard'),
-          const SizedBox(height: 10),
+          SizedBox(height: r.s(10)),
 
           // ── Live stats card ───────────────────────────────────────────────
-          // Three independent StreamBuilders so each counter updates
-          // independently without rebuilding the whole widget tree.
           _LiveStatSummaryCard(),
 
-          const SizedBox(height: 20),
+          SizedBox(height: r.s(20)),
 
           // Action grid
           GridView.count(
             crossAxisCount: 3,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+            crossAxisSpacing: r.s(12),
+            mainAxisSpacing: r.s(12),
             childAspectRatio: 1.0,
             children: [
               ActionCard(
                 label: 'Gowns',
-                icon: Image.asset('assets/icons/total_gowns.png', height: 50, width: 50),
+                icon: Image.asset('assets/icons/total_gowns.png', height: r.s(50), width: r.s(50)),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const InventoryScreen()),
@@ -88,7 +88,7 @@ class DashboardTab extends StatelessWidget {
               ),
               ActionCard(
                 label: 'Customer',
-                icon: Image.asset('assets/icons/customer.png', height: 50, width: 50),
+                icon: Image.asset('assets/icons/customer.png', height: r.s(50), width: r.s(50)),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -97,7 +97,7 @@ class DashboardTab extends StatelessWidget {
               ),
               ActionCard(
                 label: 'Overdue',
-                icon: Image.asset('assets/icons/overdue.png', height: 50, width: 50),
+                icon: Image.asset('assets/icons/overdue.png', height: r.s(50), width: r.s(50)),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -106,7 +106,7 @@ class DashboardTab extends StatelessWidget {
               ),
               ActionCard(
                 label: 'Cleaning',
-                icon: Image.asset('assets/icons/cleaning.png', height: 50, width: 50),
+                icon: Image.asset('assets/icons/cleaning.png', height: r.s(50), width: r.s(50)),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -115,7 +115,7 @@ class DashboardTab extends StatelessWidget {
               ),
               ActionCard(
                 label: 'Rented',
-                icon: Image.asset('assets/icons/rented.png', height: 50, width: 50),
+                icon: Image.asset('assets/icons/rented.png', height: r.s(50), width: r.s(50)),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -124,8 +124,8 @@ class DashboardTab extends StatelessWidget {
               ),
               ActionCard(
                 label: 'Repair',
-                icon: const Icon(Icons.build_outlined,
-                    size: 50, color: AppColors.statusRepair),
+                icon: Icon(Icons.build_outlined,
+                    size: r.s(50), color: AppColors.statusRepair),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -134,7 +134,7 @@ class DashboardTab extends StatelessWidget {
               ),
               ActionCard(
                 label: 'Add Gown',
-                icon: Image.asset('assets/icons/add_gown.png', height: 50, width: 50),
+                icon: Image.asset('assets/icons/add_gown.png', height: r.s(50), width: r.s(50)),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AddGownScreen()),
@@ -143,9 +143,9 @@ class DashboardTab extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 30),
+          SizedBox(height: r.s(30)),
           const _DashboardSubTitle(title: 'Analytics'),
-          const SizedBox(height: 10),
+          SizedBox(height: r.s(10)),
           const AnalyticsCard(),
         ],
       ),
@@ -192,10 +192,11 @@ class _DashboardSubTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 15,
+      style: TextStyle(
+        fontSize: r.sp(15),
         fontWeight: FontWeight.w600,
         color: AppColors.textLight,
       ),

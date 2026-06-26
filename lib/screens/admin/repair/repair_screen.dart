@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/services/gown_service.dart';
 
@@ -261,22 +262,23 @@ class _RepairScreenState extends State<RepairScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textDark, size: r.s(20)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Repair',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
@@ -286,25 +288,25 @@ class _RepairScreenState extends State<RepairScreen> {
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : _repairGowns.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.build_outlined,
-                          size: 52, color: AppColors.border),
-                      SizedBox(height: 12),
+                          size: r.s(52), color: AppColors.border),
+                      SizedBox(height: r.s(12)),
                       Text(
                         'No gowns under repair.',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: r.sp(14),
                           color: AppColors.textLight,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: r.s(4)),
                       Text(
                         'Gowns sent to repair will appear here.',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: r.sp(12),
                           color: AppColors.textLight,
                         ),
                       ),
@@ -312,7 +314,7 @@ class _RepairScreenState extends State<RepairScreen> {
                   ),
                 )
               : GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  padding: EdgeInsets.fromLTRB(r.s(16), r.s(12), r.s(16), r.s(24)),
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,

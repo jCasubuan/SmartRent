@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/gown_card.dart';
 import 'package:smart_rent/screens/client/gown_detail_screen.dart';
 import 'package:smart_rent/services/gown_service.dart';
@@ -80,22 +81,23 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       appBar: AppBar(
         backgroundColor: AppColors.surfaceGrey,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios,
+              color: AppColors.textDark, size: r.s(20)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Bookmarks',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
@@ -107,27 +109,27 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
           : _bookmarkedGowns.isEmpty
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    padding: EdgeInsets.symmetric(horizontal: r.s(32)),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.bookmark_border,
-                            size: 52, color: AppColors.border),
-                        const SizedBox(height: 16),
-                        const Text(
+                        Icon(Icons.bookmark_border,
+                            size: r.s(52), color: AppColors.border),
+                        SizedBox(height: r.s(16)),
+                        Text(
                           'No bookmarks yet',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: r.sp(16),
                             fontWeight: FontWeight.w600,
                             color: AppColors.textDark,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
+                        SizedBox(height: r.s(8)),
+                        Text(
                           'Tap the bookmark icon on any gown to save it here.',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: r.sp(13),
                             color: AppColors.textMid,
                             height: 1.5,
                           ),
@@ -138,13 +140,13 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   ),
                 )
               : GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(r.s(16)),
                   gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                      SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    mainAxisExtent: 270,
+                    crossAxisSpacing: r.s(12),
+                    mainAxisSpacing: r.s(12),
+                    mainAxisExtent: r.s(270),
                   ),
                   itemCount: _bookmarkedGowns.length,
                   itemBuilder: (context, index) {

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
@@ -29,6 +30,7 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
   final PageController _pageController = PageController();
   int _currentImageIndex = 0;
   late bool _isBookmarked;
+  bool _hasSubmittedRequest = false;
 
   /// Fallback estimated availability date fetched from the active rental,
   /// used when the gown doc itself doesn't have the date field set.
@@ -39,6 +41,30 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
     super.initState();
     _isBookmarked = widget.isBookmarked;
     _fetchFallbackDate();
+    _checkExistingRequest();
+  }
+
+  /// Checks if the current user already has a pending or approved request
+  /// for this gown. If so, disables the rent button.
+  Future<void> _checkExistingRequest() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('rentals')
+          .where('gownId', isEqualTo: widget.gown.id)
+          .where('customerId', isEqualTo: user.uid)
+          .where('status', whereIn: ['pending', 'approved', 'picked_up'])
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty && mounted) {
+        setState(() => _hasSubmittedRequest = true);
+      }
+    } catch (e) {
+      debugPrint('[ClientGownDetail._checkExistingRequest] $e');
+    }
   }
 
   /// If the gown is non-available and missing its expected date on the doc,
@@ -121,7 +147,7 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
     );
   }
 
-  void _handleRent() {
+  Future<void> _handleRent() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       showDialog(
@@ -174,12 +200,16 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
     }
 
     // Logged in — open rental request form
-    Navigator.push(
+    final submitted = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => RentalRequestScreen(gown: widget.gown),
       ),
     );
+
+    if (submitted == true && mounted) {
+      setState(() => _hasSubmittedRequest = true);
+    }
   }
 
   void _openImageViewer(int initialIndex) {
@@ -196,33 +226,36 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final gown = widget.gown;
     final images = gown.imageUrls;
     final hasImages = images.isNotEmpty;
     final imageCount = images.length;
-    final isAvailable = gown.status == 'available';
+    final isAvailable = gown.status == 'available' && !_hasSubmittedRequest;
 
     // Customer-friendly button text based on gown status
-    final buttonText = switch (gown.status) {
-      'available' => 'Rent this Item',
-      'reserved'  => 'Temporarily Unavailable',
-      'rented'    => 'Currently Rented Out',
-      'cleaning'  => 'Under Maintenance',
-      'repair'    => 'Under Maintenance',
-      _           => 'Currently Unavailable',
-    };
+    final buttonText = _hasSubmittedRequest
+        ? 'Request Submitted ✓'
+        : switch (gown.status) {
+            'available' => 'Rent this Item',
+            'reserved'  => 'Temporarily Unavailable',
+            'rented'    => 'Currently Rented Out',
+            'cleaning'  => 'Under Maintenance',
+            'repair'    => 'Under Maintenance',
+            _           => 'Currently Unavailable',
+          };
 
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          padding: EdgeInsets.fromLTRB(r.s(20), r.s(8), r.s(20), r.s(12)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: r.s(52),
                 child: ElevatedButton(
                   onPressed: isAvailable ? _handleRent : null,
                   style: ElevatedButton.styleFrom(
@@ -237,8 +270,8 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
                   ),
                   child: Text(
                     buttonText,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: r.sp(16),
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
@@ -392,7 +425,7 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
                   borderRadius:
                       BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                padding: EdgeInsets.fromLTRB(r.s(20), r.s(20), r.s(20), r.s(32)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -400,16 +433,16 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: r.s(10), vertical: r.s(5)),
                           decoration: BoxDecoration(
                             color: AppColors.gownStatusColor(gown.status),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             AppColors.gownStatusLabel(gown.status),
-                            style: const TextStyle(
-                              fontSize: 11,
+                            style: TextStyle(
+                              fontSize: r.sp(11),
                               fontWeight: FontWeight.w700,
                               color: AppColors.defaultForeground,
                               letterSpacing: 0.5,
@@ -441,29 +474,29 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
                     // Name
                     Text(
                       gown.name,
-                      style: const TextStyle(
-                        fontSize: 24,
+                      style: TextStyle(
+                        fontSize: r.sp(24),
                         fontWeight: FontWeight.w700,
                         color: AppColors.textDark,
                         height: 1.2,
                       ),
                     ),
 
-                    const SizedBox(height: 6),
+                    SizedBox(height: r.s(6)),
 
                     // Price
                     Text(
                       '₱${PriceFormatter.format(gown.rentalPrice)}',
-                      style: const TextStyle(
-                        fontSize: 22,
+                      style: TextStyle(
+                        fontSize: r.sp(22),
                         fontWeight: FontWeight.w700,
                         color: AppColors.primary,
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: r.s(16)),
                     const Divider(color: AppColors.border),
-                    const SizedBox(height: 14),
+                    SizedBox(height: r.s(14)),
 
                     // Category + Color chips
                     Wrap(
@@ -477,20 +510,20 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
 
                     // Description
                     if (gown.description.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      const Text(
+                      SizedBox(height: r.s(16)),
+                      Text(
                         'Description',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: r.sp(15),
                           fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: r.s(6)),
                       Text(
                         gown.description,
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: r.sp(14),
                           color: AppColors.textMid,
                           height: 1.6,
                         ),
@@ -499,28 +532,28 @@ class _ClientGownDetailScreenState extends State<ClientGownDetailScreen> {
 
                     // Measurements
                     if (gown.measurements.isNotEmpty) ...[
-                      const SizedBox(height: 20),
-                      const Text(
+                      SizedBox(height: r.s(20)),
+                      Text(
                         'Measurements',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: r.sp(15),
                           fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: r.s(4)),
+                      Text(
                         'All measurements are in centimeters (cm)',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: r.sp(12),
                           color: AppColors.textLight,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: r.s(10)),
                       _MeasurementsGrid(measurements: gown.measurements),
                     ],
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: r.s(16)),
                   ],
                 ),
               ),
@@ -764,8 +797,9 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: r.s(12), vertical: r.s(6)),
       decoration: BoxDecoration(
         color: AppColors.surfaceGrey,
         borderRadius: BorderRadius.circular(20),
@@ -773,8 +807,8 @@ class _InfoChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 13,
+        style: TextStyle(
+          fontSize: r.sp(13),
           color: AppColors.textDark,
           fontWeight: FontWeight.w500,
         ),
@@ -792,6 +826,7 @@ class _MeasurementsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final entries =
         measurements.entries.where((e) => e.value.isNotEmpty).toList();
 
@@ -809,7 +844,7 @@ class _MeasurementsGrid extends StatelessWidget {
         final key = entries[index].key;
         final val = entries[index].value;
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: r.s(12), vertical: r.s(8)),
           decoration: BoxDecoration(
             color: AppColors.surfaceCream,
             borderRadius: BorderRadius.circular(8),
@@ -821,8 +856,8 @@ class _MeasurementsGrid extends StatelessWidget {
             children: [
               Text(
                 key,
-                style: const TextStyle(
-                  fontSize: 10,
+                style: TextStyle(
+                  fontSize: r.sp(10),
                   color: AppColors.textLight,
                   fontWeight: FontWeight.w500,
                 ),
@@ -831,8 +866,8 @@ class _MeasurementsGrid extends StatelessWidget {
               ),
               Text(
                 '$val cm',
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: r.sp(13),
                   color: AppColors.textDark,
                   fontWeight: FontWeight.w700,
                 ),

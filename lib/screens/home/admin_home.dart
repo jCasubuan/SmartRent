@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/in_app_notification_banner.dart';
 import 'package:smart_rent/screens/admin/overdue/overdue_screen.dart';
 import 'package:smart_rent/services/gown_service.dart';
@@ -59,7 +60,11 @@ class _AdminHomeState extends State<AdminHome> {
     try {
       // Check overdue rentals
       final rentals = await RentalService.pickedUpRentalsStream().first;
-      overdueRentals = rentals.where((r) => r.returnDate.isBefore(now)).length;
+      final today = DateTime(now.year, now.month, now.day);
+      overdueRentals = rentals.where((r) {
+        final returnDay = DateTime(r.returnDate.year, r.returnDate.month, r.returnDate.day);
+        return today.isAfter(returnDay);
+      }).length;
 
       // Check overdue cleaning
       final cleaningGowns = await GownService.getCleaningGownsWithDates();
@@ -150,14 +155,15 @@ class _AdminHomeState extends State<AdminHome> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       body: SafeArea(child: _tabs[_currentIndex]),
       floatingActionButton: GestureDetector(
         onTap: () => setState(() => _currentIndex = 2),
         child: Container(
-          width: 64,
-          height: 64,
+          width: r.s(64),
+          height: r.s(64),
           decoration: BoxDecoration(
             color: AppColors.primary,
             shape: BoxShape.circle,
@@ -169,10 +175,10 @@ class _AdminHomeState extends State<AdminHome> {
               ),
             ],
           ),
-          child: const Icon(
+          child: Icon(
             Icons.camera_alt,
             color: AppColors.defaultForeground,
-            size: 28,
+            size: r.s(28),
           ),
         ),
       ),
@@ -183,7 +189,7 @@ class _AdminHomeState extends State<AdminHome> {
         color: AppColors.background,
         elevation: 8,
         child: SizedBox(
-          height: 60,
+          height: r.s(60),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -201,7 +207,7 @@ class _AdminHomeState extends State<AdminHome> {
                 currentIndex: _currentIndex,
                 onTap: (i) => setState(() => _currentIndex = i),
               ),
-              const SizedBox(width: 48), // space for FAB
+              SizedBox(width: r.s(48)), // space for FAB
               _NavItem(
                 icon: Icons.bar_chart_outlined,
                 activeIcon: Icons.bar_chart,
@@ -247,6 +253,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final isSelected = currentIndex == index;
     return GestureDetector(
       onTap: () => onTap(index),
@@ -256,13 +263,13 @@ class _NavItem extends StatelessWidget {
           Icon(
             isSelected ? activeIcon : icon,
             color: isSelected ? AppColors.primary : AppColors.textLight,
-            size: 24,
+            size: r.s(24),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: r.s(2)),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: r.sp(11),
               color: isSelected ? AppColors.primary : AppColors.textLight,
               fontWeight:
                   isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -289,6 +296,7 @@ class _InboxNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final isSelected = currentIndex == index;
 
     return GestureDetector(
@@ -309,7 +317,7 @@ class _InboxNavItem extends StatelessWidget {
                     color: isSelected
                         ? AppColors.primary
                         : AppColors.textLight,
-                    size: 24,
+                    size: r.s(24),
                   ),
                   // Badge — only shown when count > 0
                   if (count > 0)
@@ -317,19 +325,19 @@ class _InboxNavItem extends StatelessWidget {
                       top: -4,
                       right: -6,
                       child: Container(
-                        padding: const EdgeInsets.all(3),
+                        padding: EdgeInsets.all(r.s(3)),
                         decoration: const BoxDecoration(
                           color: AppColors.error,
                           shape: BoxShape.circle,
                         ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
+                        constraints: BoxConstraints(
+                          minWidth: r.s(16),
+                          minHeight: r.s(16),
                         ),
                         child: Text(
                           count > 99 ? '99+' : '$count',
-                          style: const TextStyle(
-                            fontSize: 9,
+                          style: TextStyle(
+                            fontSize: r.sp(9),
                             fontWeight: FontWeight.w700,
                             color: AppColors.defaultForeground,
                           ),
@@ -341,11 +349,11 @@ class _InboxNavItem extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: r.s(2)),
           Text(
             'Inbox',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: r.sp(11),
               color: isSelected ? AppColors.primary : AppColors.textLight,
               fontWeight:
                   isSelected ? FontWeight.w600 : FontWeight.normal,

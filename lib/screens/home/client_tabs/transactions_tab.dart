@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/screens/auth/landing_page.dart';
 import 'package:smart_rent/screens/client/request_details_screen.dart';
@@ -34,6 +35,7 @@ class _TransactionsTabState extends State<TransactionsTab>
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final user = FirebaseAuth.instance.currentUser;
 
     // Guest — prompt to sign in
@@ -44,44 +46,44 @@ class _TransactionsTabState extends State<TransactionsTab>
           backgroundColor: AppColors.background,
           elevation: 0,
           centerTitle: true,
-          title: const Text(
+          title: Text(
             'My Rental Requests',
             style: TextStyle(
               color: AppColors.textDark,
               fontWeight: FontWeight.w700,
-              fontSize: 18,
+              fontSize: r.sp(18),
             ),
           ),
         ),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+            padding: EdgeInsets.symmetric(horizontal: r.s(40)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.receipt_long_outlined,
-                    size: 64, color: AppColors.border),
-                const SizedBox(height: 16),
-                const Text(
+                Icon(Icons.receipt_long_outlined,
+                    size: r.s(64), color: AppColors.border),
+                SizedBox(height: r.s(16)),
+                Text(
                   'Sign in to see your requests',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: r.sp(16),
                     fontWeight: FontWeight.w600,
                     color: AppColors.textDark,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: r.s(8)),
+                Text(
                   'Once you sign in, all your rental requests will show up here.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: r.sp(13),
                     color: AppColors.textMid,
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: r.s(28)),
                 ElevatedButton(
                   onPressed: () => Navigator.push(
                     context,
@@ -95,10 +97,10 @@ class _TransactionsTabState extends State<TransactionsTab>
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25)),
                   ),
-                  child: const Text(
+                  child: Text(
                     'SIGN IN',
                     style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+                        fontSize: r.sp(15), fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -114,12 +116,12 @@ class _TransactionsTabState extends State<TransactionsTab>
         backgroundColor: AppColors.background,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'My Rental Requests',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         bottom: TabBar(
@@ -128,16 +130,16 @@ class _TransactionsTabState extends State<TransactionsTab>
           tabAlignment: TabAlignment.start,
           labelColor: AppColors.defaultForeground,
           unselectedLabelColor: AppColors.textMid,
-          labelStyle: const TextStyle(
-              fontWeight: FontWeight.w700, fontSize: 13),
-          unselectedLabelStyle: const TextStyle(fontSize: 13),
+          labelStyle: TextStyle(
+              fontWeight: FontWeight.w700, fontSize: r.sp(13)),
+          unselectedLabelStyle: TextStyle(fontSize: r.sp(13)),
           indicator: BoxDecoration(
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(20),
           ),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
-          labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+          labelPadding: EdgeInsets.symmetric(horizontal: r.s(16)),
           tabs: const [
             Tab(text: 'Current'),
             Tab(text: 'Approved'),
@@ -209,11 +211,12 @@ class _RequestList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     if (rentals.isEmpty) {
       return Center(
         child: Text(
           emptyMessage,
-          style: const TextStyle(fontSize: 14, color: AppColors.textLight),
+          style: TextStyle(fontSize: r.sp(14), color: AppColors.textLight),
         ),
       );
     }
@@ -221,7 +224,7 @@ class _RequestList extends StatelessWidget {
     final grouped = _groupByDate(rentals);
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: EdgeInsets.fromLTRB(r.s(16), r.s(16), r.s(16), r.s(24)),
       itemCount: grouped.length,
       itemBuilder: (context, index) {
         final section = grouped[index];
@@ -229,11 +232,11 @@ class _RequestList extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 10),
+              padding: EdgeInsets.only(top: r.s(8), bottom: r.s(10)),
               child: Text(
                 section.label,
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: r.sp(13),
                   fontWeight: FontWeight.w700,
                   color: AppColors.textLight,
                   letterSpacing: 0.3,
@@ -241,7 +244,7 @@ class _RequestList extends StatelessWidget {
               ),
             ),
             ...section.items.map((rental) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.only(bottom: r.s(12)),
                   child: _RequestCard(rental: rental),
                 )),
           ],
@@ -312,6 +315,7 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resp = Responsive(context);
     final r = rental;
     final hasImage = r.gownImageUrl.isNotEmpty;
     final statusColor = AppColors.rentalStatusColor(r.status);
@@ -330,7 +334,7 @@ class _RequestCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(resp.s(12)),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -340,14 +344,14 @@ class _RequestCard extends StatelessWidget {
               child: hasImage
                   ? CachedImage(
                       imageUrl: r.gownImageUrl,
-                      width: 80,
-                      height: 90,
+                      width: resp.s(80),
+                      height: resp.s(90),
                       fit: BoxFit.cover,
                     )
-                  : _placeholder(),
+                  : _placeholder(resp),
             ),
 
-            const SizedBox(width: 12),
+            SizedBox(width: resp.s(12)),
 
             // Info + button
             Expanded(
@@ -356,8 +360,8 @@ class _RequestCard extends StatelessWidget {
                 children: [
                   // Status badge
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: resp.s(10), vertical: resp.s(4)),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
@@ -367,7 +371,7 @@ class _RequestCard extends StatelessWidget {
                     child: Text(
                       AppColors.rentalStatusLabel(r.status),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: resp.sp(11),
                         fontWeight: FontWeight.w700,
                         color: statusColor,
                         letterSpacing: 0.5,
@@ -375,13 +379,13 @@ class _RequestCard extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 6),
+                  SizedBox(height: resp.s(6)),
 
                   // Gown name
                   Text(
                     r.gownName,
-                    style: const TextStyle(
-                      fontSize: 15,
+                    style: TextStyle(
+                      fontSize: resp.sp(15),
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
                     ),
@@ -389,12 +393,12 @@ class _RequestCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
 
-                  const SizedBox(height: 10),
+                  SizedBox(height: resp.s(10)),
 
                   // View Details button
                   SizedBox(
                     width: double.infinity,
-                    height: 36,
+                    height: resp.s(36),
                     child: ElevatedButton(
                       onPressed: () => Navigator.push(
                         context,
@@ -411,10 +415,10 @@ class _RequestCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'View Details',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: resp.sp(13),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -429,16 +433,16 @@ class _RequestCard extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() {
+  Widget _placeholder(Responsive resp) {
     return Container(
-      width: 80,
-      height: 90,
+      width: resp.s(80),
+      height: resp.s(90),
       decoration: BoxDecoration(
         color: AppColors.surfaceGrey,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Icon(Icons.checkroom_outlined,
-          color: AppColors.border, size: 28),
+      child: Icon(Icons.checkroom_outlined,
+          color: AppColors.border, size: resp.s(28)),
     );
   }
 }

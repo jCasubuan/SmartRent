@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/services/gown_service.dart';
 
@@ -266,22 +267,23 @@ class _CleaningScreenState extends State<CleaningScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textDark, size: r.s(20)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Cleaning',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
@@ -291,25 +293,25 @@ class _CleaningScreenState extends State<CleaningScreen> {
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : _cleaningGowns.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.local_laundry_service_outlined,
-                          size: 52, color: AppColors.border),
-                      SizedBox(height: 12),
+                          size: r.s(52), color: AppColors.border),
+                      SizedBox(height: r.s(12)),
                       Text(
                         'No gowns in cleaning.',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: r.sp(14),
                           color: AppColors.textLight,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: r.s(4)),
                       Text(
                         'Gowns sent to cleaning will appear here.',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: r.sp(12),
                           color: AppColors.textLight,
                         ),
                       ),
@@ -317,7 +319,7 @@ class _CleaningScreenState extends State<CleaningScreen> {
                   ),
                 )
               : GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  padding: EdgeInsets.fromLTRB(r.s(16), r.s(12), r.s(16), r.s(24)),
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -362,6 +364,7 @@ class _CleaningGownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final hasImage = gown.imageUrls.isNotEmpty;
     final isOverdue = expectedDate != null &&
         expectedDate!.isBefore(DateTime.now());
@@ -407,25 +410,25 @@ class _CleaningGownCard extends StatelessWidget {
                 // Overdue badge
                 if (isOverdue)
                   Positioned(
-                    top: 8,
-                    left: 8,
+                    top: r.s(8),
+                    left: r.s(8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 3),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: r.s(6), vertical: r.s(3)),
                       decoration: BoxDecoration(
                         color: AppColors.error,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.warning_amber_outlined,
-                              size: 10, color: AppColors.defaultForeground),
-                          SizedBox(width: 3),
+                              size: r.s(10), color: AppColors.defaultForeground),
+                          SizedBox(width: r.s(3)),
                           Text(
                             'OVERDUE',
                             style: TextStyle(
-                              fontSize: 9,
+                              fontSize: r.sp(9),
                               fontWeight: FontWeight.w700,
                               color: AppColors.defaultForeground,
                               letterSpacing: 0.3,
@@ -441,31 +444,31 @@ class _CleaningGownCard extends StatelessWidget {
 
           // Info section
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+            padding: EdgeInsets.fromLTRB(r.s(10), r.s(8), r.s(10), r.s(4)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   gown.name,
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: TextStyle(
+                    fontSize: r.sp(13),
                     fontWeight: FontWeight.w700,
                     color: AppColors.textDark,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: r.s(2)),
                 Text(
                   'Category: ${gown.category}',
-                  style: const TextStyle(
-                    fontSize: 11,
+                  style: TextStyle(
+                    fontSize: r.sp(11),
                     color: AppColors.textLight,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: r.s(3)),
                 // Expected date row
                 Row(
                   children: [
@@ -473,12 +476,12 @@ class _CleaningGownCard extends StatelessWidget {
                       isOverdue
                           ? Icons.warning_amber_outlined
                           : Icons.schedule_outlined,
-                      size: 12,
+                      size: r.s(12),
                       color: isOverdue
                           ? AppColors.error
                           : AppColors.textLight,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: r.s(4)),
                     Expanded(
                       child: Text(
                         expectedDate == null
@@ -487,7 +490,7 @@ class _CleaningGownCard extends StatelessWidget {
                                 ? 'Due: $formattedExpected'
                                 : 'Expected: $formattedExpected',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: r.sp(11),
                           color: isOverdue
                               ? AppColors.error
                               : AppColors.textLight,
@@ -507,7 +510,7 @@ class _CleaningGownCard extends StatelessWidget {
 
           // Mark as clean button
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 4, 10, 10),
+            padding: EdgeInsets.fromLTRB(r.s(10), r.s(4), r.s(10), r.s(10)),
             child: SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(

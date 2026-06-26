@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/services/gown_service.dart';
 import 'package:smart_rent/services/rental_service.dart';
@@ -61,22 +62,23 @@ class _RentedScreenState extends State<RentedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       appBar: AppBar(
         backgroundColor: AppColors.surfaceGrey,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textDark, size: r.s(20)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Currently Rented Out',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
@@ -85,7 +87,7 @@ class _RentedScreenState extends State<RentedScreen> {
         children: [
           // ── Search + Sort row ────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: EdgeInsets.fromLTRB(r.s(16), r.s(8), r.s(16), 0),
             child: Row(
               children: [
                 Expanded(
@@ -777,7 +779,10 @@ class _RentedCardState extends State<_RentedCard> {
   Widget build(BuildContext context) {
     final r = widget.rental;
     final hasImage = r.gownImageUrl.isNotEmpty;
-    final isOverdue = r.returnDate.isBefore(DateTime.now());
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final returnDay = DateTime(r.returnDate.year, r.returnDate.month, r.returnDate.day);
+    final isOverdue = today.isAfter(returnDay);
 
     return Container(
       decoration: BoxDecoration(

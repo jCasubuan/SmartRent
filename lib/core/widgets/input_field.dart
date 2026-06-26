@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 
 /// A styled [TextFormField] used across auth and form screens.
 ///
@@ -34,6 +35,7 @@ class InputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
@@ -44,16 +46,16 @@ class InputField extends StatelessWidget {
       inputFormatters: inputFormatters,
       maxLength: maxLength,
       textCapitalization: textCapitalization,
-      style: const TextStyle(fontSize: 14, color: AppColors.textDark),
+      style: TextStyle(fontSize: r.sp(14), color: AppColors.textDark),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
-        prefixIcon: Icon(prefixIcon, color: AppColors.textLight, size: 20),
+        hintStyle: TextStyle(color: AppColors.textLight, fontSize: r.sp(14)),
+        prefixIcon: Icon(prefixIcon, color: AppColors.textLight, size: r.s(20)),
         suffixIcon: suffixIcon,
         counterText: '',
         errorMaxLines: 2,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            EdgeInsets.symmetric(horizontal: r.s(16), vertical: r.s(14)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.border),

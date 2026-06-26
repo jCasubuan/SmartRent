@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/utils/guest_preferences.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
 import 'package:smart_rent/screens/auth/loading_screen.dart';
 import 'package:smart_rent/controllers/login_controller.dart';
@@ -205,6 +206,7 @@ class _SigninScreenState extends State<SigninScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
@@ -225,28 +227,28 @@ class _SigninScreenState extends State<SigninScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0, vertical: 24.0),
+                padding: EdgeInsets.symmetric(
+                    horizontal: r.s(24), vertical: r.s(24)),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 5),
+                      SizedBox(height: r.s(5)),
 
                       Center(
                         child: Image.asset(
                           'assets/icons/smart_rent_logo.jpg',
-                          height: 80,
+                          height: r.s(80),
                           fit: BoxFit.contain,
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: r.s(30)),
 
                       // Email
                       const FieldLabel(label: 'EMAIL ADDRESS'),
-                      const SizedBox(height: 8),
+                      SizedBox(height: r.s(8)),
                       InputField(
                         controller: _emailController,
                         hint: 'example@gmail.com',
@@ -260,11 +262,11 @@ class _SigninScreenState extends State<SigninScreen> {
                         validator: _controller.validateEmail,
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: r.s(20)),
 
                       // Password
                       const FieldLabel(label: 'PASSWORD'),
-                      const SizedBox(height: 8),
+                      SizedBox(height: r.s(8)),
                       InputField(
                         controller: _passwordController,
                         hint: '••••••••••',
@@ -276,7 +278,7 @@ class _SigninScreenState extends State<SigninScreen> {
                                 ? Icons.visibility_off_outlined
                                 : Icons.visibility_outlined,
                             color: AppColors.textLight,
-                            size: 20,
+                            size: r.s(20),
                           ),
                           onPressed: () => setState(
                               () => _obscurePassword = !_obscurePassword),
@@ -297,12 +299,12 @@ class _SigninScreenState extends State<SigninScreen> {
                             );
                           },
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            padding: EdgeInsets.symmetric(vertical: r.s(8)),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Forgot Password?',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
                             ),
@@ -310,17 +312,17 @@ class _SigninScreenState extends State<SigninScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      SizedBox(height: r.s(8)),
 
                       // Lockout message
                       if (_isLockedOut)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                          padding: EdgeInsets.only(bottom: r.s(12)),
                           child: Text(
                             'Too many attempts. Try again in $_lockoutSecondsRemaining seconds.',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.errorHighlight,
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,
@@ -330,7 +332,7 @@ class _SigninScreenState extends State<SigninScreen> {
                       // Sign In button
                       SizedBox(
                         width: double.infinity,
-                        height: 45,
+                        height: r.s(45),
                         child: ElevatedButton(
                           onPressed: (_isLoading || _isLockedOut)
                               ? null
@@ -346,19 +348,19 @@ class _SigninScreenState extends State<SigninScreen> {
                             ),
                           ),
                           child: _isLoading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
+                              ? SizedBox(
+                                  width: r.s(22),
+                                  height: r.s(22),
+                                  child: const CircularProgressIndicator(
                                     strokeWidth: 2.5,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         AppColors.defaultForeground),
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'SIGN IN',
                                   style: TextStyle(
-                                    fontSize: 15,
+                                    fontSize: r.sp(15),
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 1.2,
                                   ),
@@ -366,27 +368,27 @@ class _SigninScreenState extends State<SigninScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: r.s(24)),
 
                       // Divider
                       Row(
-                        children: const [
-                          Expanded(child: Divider(color: AppColors.textDark)),
+                        children: [
+                          const Expanded(child: Divider(color: AppColors.textDark)),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            padding: EdgeInsets.symmetric(horizontal: r.s(12)),
                             child: Text(
                               'or',
                               style: TextStyle(
                                 color: AppColors.textDark,
-                                fontSize: 13,
+                                fontSize: r.sp(13),
                               ),
                             ),
                           ),
-                          Expanded(child: Divider(color: AppColors.textDark)),
+                          const Expanded(child: Divider(color: AppColors.textDark)),
                         ],
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: r.s(20)),
 
                       // Social buttons
                       Row(
@@ -395,33 +397,33 @@ class _SigninScreenState extends State<SigninScreen> {
                           SocialIconButton(
                             icon: SvgPicture.asset(
                               'assets/icons/Google__G__logo.svg',
-                              height: 20,
-                              width: 20,
+                              height: r.s(20),
+                              width: r.s(20),
                             ),
                             onTap: () => handleGoogleSignIn(context),
                           ),
-                          const SizedBox(width: 16),
+                          SizedBox(width: r.s(16)),
                           SocialIconButton(
                             icon: Image.asset(
                               'assets/icons/Facebook_Logo_Primary.png',
-                              height: 20,
-                              width: 20,
+                              height: r.s(20),
+                              width: r.s(20),
                             ),
                             onTap: () => handleFacebookSignIn(context),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: r.s(24)),
 
                       // Sign Up redirect
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             "Don't have an account? ",
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               color: AppColors.textDark,
                             ),
                           ),
@@ -434,10 +436,10 @@ class _SigninScreenState extends State<SigninScreen> {
                                 ),
                               );
                             },
-                            child: const Text(
+                            child: Text(
                               'Sign Up',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: r.sp(13),
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -446,7 +448,7 @@ class _SigninScreenState extends State<SigninScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 15),
+                      SizedBox(height: r.s(15)),
                     ],
                   ),
                 ),

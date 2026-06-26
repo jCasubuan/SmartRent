@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/services/reports_service.dart';
 
 /// Dashboard analytics summary card.
@@ -35,9 +36,10 @@ class _AnalyticsCardState extends State<AnalyticsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(r.s(20)),
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(16),
@@ -50,9 +52,9 @@ class _AnalyticsCardState extends State<AnalyticsCard> {
         ],
       ),
       child: _isLoading
-          ? const SizedBox(
-              height: 80,
-              child: Center(
+          ? SizedBox(
+              height: r.s(80),
+              child: const Center(
                 child: CircularProgressIndicator(
                     color: AppColors.primary, strokeWidth: 2.5),
               ),
@@ -64,25 +66,25 @@ class _AnalyticsCardState extends State<AnalyticsCard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'This Month',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: r.sp(14),
                         fontWeight: FontWeight.w700,
                         color: AppColors.textDark,
                       ),
                     ),
                     Text(
                       _currentMonthLabel(),
-                      style: const TextStyle(
-                        fontSize: 11,
+                      style: TextStyle(
+                        fontSize: r.sp(11),
                         color: AppColors.textLight,
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: r.s(16)),
 
                 // Revenue + Completed row
                 Row(
@@ -95,7 +97,7 @@ class _AnalyticsCardState extends State<AnalyticsCard> {
                         color: AppColors.rentalApproved,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: r.s(16)),
                     Expanded(
                       child: _MiniMetric(
                         label: 'Completed',
@@ -104,7 +106,7 @@ class _AnalyticsCardState extends State<AnalyticsCard> {
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: r.s(16)),
                     Expanded(
                       child: _MiniMetric(
                         label: 'Penalties',
@@ -147,14 +149,15 @@ class _MiniMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Column(
       children: [
-        Icon(icon, color: color, size: 22),
-        const SizedBox(height: 6),
+        Icon(icon, color: color, size: r.s(22)),
+        SizedBox(height: r.s(6)),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 13,
+          style: TextStyle(
+            fontSize: r.sp(13),
             fontWeight: FontWeight.w700,
             color: AppColors.textDark,
           ),
@@ -162,11 +165,11 @@ class _MiniMetric extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: r.s(2)),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 10,
+          style: TextStyle(
+            fontSize: r.sp(10),
             color: AppColors.textLight,
           ),
         ),

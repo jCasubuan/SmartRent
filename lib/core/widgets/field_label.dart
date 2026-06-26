@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 
 /// A small uppercase label used above form input fields.
 /// Set [isRequired] to true to show a red asterisk after the label.
@@ -11,11 +12,12 @@ class FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     if (!isRequired) {
       return Text(
         label,
-        style: const TextStyle(
-          fontSize: 11,
+        style: TextStyle(
+          fontSize: r.sp(11),
           fontWeight: FontWeight.w700,
           color: AppColors.textDark,
           letterSpacing: 0.8,
@@ -28,17 +30,17 @@ class FieldLabel extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: r.sp(11),
             fontWeight: FontWeight.w700,
             color: AppColors.textDark,
             letterSpacing: 0.8,
           ),
         ),
-        const Text(
+        Text(
           ' *',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: r.sp(12),
             fontWeight: FontWeight.w700,
             color: AppColors.error,
           ),

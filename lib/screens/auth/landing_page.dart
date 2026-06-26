@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/utils/guest_preferences.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/app_footer.dart';
 import 'package:smart_rent/controllers/google_sign_in_handler.dart';
 import 'package:smart_rent/controllers/facebook_sign_in_handler.dart';
@@ -21,11 +22,12 @@ class _LandingPageState extends State<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          padding: EdgeInsets.symmetric(horizontal: r.s(32)),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               minHeight: MediaQuery.of(context).size.height -
@@ -40,16 +42,16 @@ class _LandingPageState extends State<LandingPage> {
 
               Image.asset(
                 'assets/icons/smart_rent_logo.jpg',
-                height: 80,
+                height: r.s(80),
                 fit: BoxFit.contain,
               ),
 
               const SizedBox(height: 1),
 
-              const Text(
+              Text(
                 'Premium Gown Rentals',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: r.sp(16),
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
                 ),
@@ -57,12 +59,12 @@ class _LandingPageState extends State<LandingPage> {
               ),
 
               // const Spacer(flex: 1),
-              const SizedBox(height: 70),
+              SizedBox(height: r.s(70)),
 
               // Sign In button
               SizedBox(
                 width: double.infinity,
-                height: 45,
+                height: r.s(45),
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
@@ -80,10 +82,10 @@ class _LandingPageState extends State<LandingPage> {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'SIGN IN',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: r.sp(15),
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                     ),
@@ -91,12 +93,12 @@ class _LandingPageState extends State<LandingPage> {
                 ),
               ),
 
-              const SizedBox(height: 14),
+              SizedBox(height: r.s(14)),
 
               // Create Account button
               SizedBox(
                 width: double.infinity,
-                height: 45,
+                height: r.s(45),
                 child: OutlinedButton(
                   onPressed: () {
                     Navigator.push(
@@ -116,10 +118,10 @@ class _LandingPageState extends State<LandingPage> {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'CREATE ACCOUNT',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: r.sp(15),
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                     ),
@@ -127,59 +129,59 @@ class _LandingPageState extends State<LandingPage> {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              SizedBox(height: r.s(28)),
 
               // Divider with "or"
               Row(
-                children: const [
-                  Expanded(child: Divider(color: AppColors.textMid)),
+                children: [
+                  const Expanded(child: Divider(color: AppColors.textMid)),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    padding: EdgeInsets.symmetric(horizontal: r.s(12)),
                     child: Text(
                       'or',
                       style: TextStyle(
                         color: AppColors.textMid,
-                        fontSize: 13,
+                        fontSize: r.sp(13),
                       ),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppColors.textMid)),
+                  const Expanded(child: Divider(color: AppColors.textMid)),
                 ],
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: r.s(24)),
 
               // Continue with Google
               _SocialButton(
                 icon: SvgPicture.asset(
                   'assets/icons/Google__G__logo.svg',
-                  width: 20,
-                  height: 20,
+                  width: r.s(20),
+                  height: r.s(20),
                 ),
                 label: 'Continue with Google',
                 onTap: () => handleGoogleSignIn(context),
               ),
 
-              const SizedBox(height: 10),
+              SizedBox(height: r.s(10)),
 
               // Continue with Facebook
               _SocialButton(
                 icon: Image.asset(
                   'assets/icons/Facebook_Logo_Primary.png',
-                  width: 20,
-                  height: 20,
+                  width: r.s(20),
+                  height: r.s(20),
                 ),
                 label: 'Continue with Facebook',
                 onTap: () => handleFacebookSignIn(context),
               ),
 
-              const SizedBox(height: 10),
+              SizedBox(height: r.s(10)),
 
               // Continue anonymous
               _SocialButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.person_outline,
-                  size: 20,
+                  size: r.s(20),
                   color: AppColors.textDark,
                 ),
                 label: 'Continue as Guest',
@@ -222,16 +224,17 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: r.s(50),
       child: OutlinedButton.icon(
         onPressed: onTap,
         icon: icon,
         label: Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
+          style: TextStyle(
+            fontSize: r.sp(14),
             color: AppColors.textMid,
             fontWeight: FontWeight.w500,
           ),

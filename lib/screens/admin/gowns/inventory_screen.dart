@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/category_model.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/gown_card.dart';
 import 'package:smart_rent/services/category_service.dart';
 import 'package:smart_rent/services/gown_service.dart';
@@ -162,6 +163,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -171,12 +173,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Inventory',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
@@ -237,21 +239,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
             children: [
               // Stats row
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                padding: EdgeInsets.fromLTRB(r.s(20), r.s(12), r.s(20), 0),
                 child: Row(
                   children: [
                     _StatCard(label: 'TOTAL GOWNS', value: '$totalGowns'),
-                    const SizedBox(width: 12),
+                    SizedBox(width: r.s(12)),
                     _StatCard(label: 'AVAILABLE', value: '$availableGowns'),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: r.s(16)),
 
               // Category dropdown + Search bar + sort button
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: r.s(20)),
                 child: Row(
                   children: [
                     // Category dropdown
@@ -383,14 +385,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           children: [
                             Expanded(
                               child: GridView.builder(
-                                padding: const EdgeInsets.fromLTRB(
-                                    20, 0, 20, 12),
+                                padding: EdgeInsets.fromLTRB(
+                                    r.s(20), 0, r.s(20), r.s(12)),
                                 gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                    SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  mainAxisExtent: 285,
+                                  crossAxisSpacing: r.s(12),
+                                  mainAxisSpacing: r.s(12),
+                                  mainAxisExtent: r.s(285),
                                 ),
                                 itemCount: pageItems.length,
                                 itemBuilder: (context, index) {
@@ -543,9 +545,10 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: EdgeInsets.symmetric(vertical: r.s(16)),
         decoration: BoxDecoration(
           color: AppColors.surfaceGrey,
           borderRadius: BorderRadius.circular(12),
@@ -555,17 +558,17 @@ class _StatCard extends StatelessWidget {
           children: [
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 28,
+              style: TextStyle(
+                fontSize: r.sp(28),
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: r.s(4)),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 11,
+              style: TextStyle(
+                fontSize: r.sp(11),
                 fontWeight: FontWeight.w600,
                 color: AppColors.textLight,
                 letterSpacing: 0.5,

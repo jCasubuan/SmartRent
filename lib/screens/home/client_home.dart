@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/in_app_notification_banner.dart';
 import 'package:smart_rent/services/notification_service.dart';
 import 'package:smart_rent/services/rental_service.dart';
@@ -139,7 +140,7 @@ class _ClientHomeState extends State<ClientHome> {
           rental.returnDate.month,
           rental.returnDate.day,
         );
-        if (dueDate.isAfter(today)) continue;
+        if (!today.isAfter(dueDate)) continue;
 
         overdueCount++;
         firstOverdueGown ??= rental.gownName;
@@ -175,6 +176,7 @@ class _ClientHomeState extends State<ClientHome> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(child: _tabs[_currentIndex]),
@@ -182,7 +184,7 @@ class _ClientHomeState extends State<ClientHome> {
         color: AppColors.background,
         elevation: 8,
         child: SizedBox(
-          height: 60,
+          height: r.s(60),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -244,6 +246,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final isSelected = currentIndex == index;
     return GestureDetector(
       onTap: () => onTap(index),
@@ -253,13 +256,13 @@ class _NavItem extends StatelessWidget {
           Icon(
             isSelected ? activeIcon : icon,
             color: isSelected ? AppColors.primary : AppColors.textLight,
-            size: 24,
+            size: r.s(24),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: r.s(2)),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: r.sp(11),
               color: isSelected ? AppColors.primary : AppColors.textLight,
               fontWeight:
                   isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -286,6 +289,7 @@ class _NotificationsNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final isSelected = currentIndex == index;
     final user = FirebaseAuth.instance.currentUser;
 
@@ -299,7 +303,7 @@ class _NotificationsNavItem extends StatelessWidget {
               ? Icon(
                   isSelected ? Icons.notifications : Icons.notifications_outlined,
                   color: isSelected ? AppColors.primary : AppColors.textLight,
-                  size: 24,
+                  size: r.s(24),
                 )
               : StreamBuilder<int>(
                   stream: NotificationService.unreadCountStream(user.uid),
@@ -315,26 +319,26 @@ class _NotificationsNavItem extends StatelessWidget {
                           color: isSelected
                               ? AppColors.primary
                               : AppColors.textLight,
-                          size: 24,
+                          size: r.s(24),
                         ),
                         if (count > 0)
                           Positioned(
                             top: -4,
                             right: -6,
                             child: Container(
-                              padding: const EdgeInsets.all(3),
+                              padding: EdgeInsets.all(r.s(3)),
                               decoration: const BoxDecoration(
                                 color: AppColors.error,
                                 shape: BoxShape.circle,
                               ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
+                              constraints: BoxConstraints(
+                                minWidth: r.s(16),
+                                minHeight: r.s(16),
                               ),
                               child: Text(
                                 count > 99 ? '99+' : '$count',
-                                style: const TextStyle(
-                                  fontSize: 9,
+                                style: TextStyle(
+                                  fontSize: r.sp(9),
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.defaultForeground,
                                 ),
@@ -346,11 +350,11 @@ class _NotificationsNavItem extends StatelessWidget {
                     );
                   },
                 ),
-          const SizedBox(height: 2),
+          SizedBox(height: r.s(2)),
           Text(
             'Notifications',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: r.sp(11),
               color: isSelected ? AppColors.primary : AppColors.textLight,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
@@ -378,13 +382,14 @@ class _ProfileNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final isSelected = currentIndex == index;
 
     Widget avatar;
     if (photoUrl != null) {
       // Google / Facebook user — show their actual profile photo
       avatar = CircleAvatar(
-        radius: 13,
+        radius: r.s(13),
         backgroundImage: NetworkImage(photoUrl!),
         // Gold ring when selected
         backgroundColor:
@@ -395,7 +400,7 @@ class _ProfileNavItem extends StatelessWidget {
       avatar = Icon(
         isSelected ? Icons.person : Icons.person_outline,
         color: isSelected ? AppColors.primary : AppColors.textLight,
-        size: 24,
+        size: r.s(24),
       );
     }
 
@@ -407,7 +412,7 @@ class _ProfileNavItem extends StatelessWidget {
           // Gold ring around photo when selected
           if (photoUrl != null)
             Container(
-              padding: const EdgeInsets.all(2),
+              padding: EdgeInsets.all(r.s(2)),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -421,11 +426,11 @@ class _ProfileNavItem extends StatelessWidget {
             )
           else
             avatar,
-          const SizedBox(height: 2),
+          SizedBox(height: r.s(2)),
           Text(
             'Profile',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: r.sp(11),
               color: isSelected ? AppColors.primary : AppColors.textLight,
               fontWeight:
                   isSelected ? FontWeight.w600 : FontWeight.normal,

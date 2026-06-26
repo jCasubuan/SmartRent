@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/services/gown_service.dart';
 import 'package:smart_rent/services/rental_service.dart';
@@ -33,22 +34,23 @@ class _OverdueScreenState extends State<OverdueScreen>
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       appBar: AppBar(
         backgroundColor: AppColors.surfaceGrey,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textDark, size: r.s(20)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Overdue',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
@@ -57,8 +59,8 @@ class _OverdueScreenState extends State<OverdueScreen>
           labelColor: AppColors.defaultForeground,
           unselectedLabelColor: AppColors.textMid,
           labelStyle:
-              const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-          unselectedLabelStyle: const TextStyle(fontSize: 13),
+              TextStyle(fontWeight: FontWeight.w700, fontSize: r.sp(13)),
+          unselectedLabelStyle: TextStyle(fontSize: r.sp(13)),
           indicator: BoxDecoration(
             color: AppColors.error,
             borderRadius: BorderRadius.circular(20),
@@ -102,8 +104,12 @@ class _OverdueRentalsTab extends StatelessWidget {
 
         final all = snapshot.data ?? [];
         final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
         final overdue =
-            all.where((r) => r.returnDate.isBefore(now)).toList();
+            all.where((r) {
+              final returnDay = DateTime(r.returnDate.year, r.returnDate.month, r.returnDate.day);
+              return today.isAfter(returnDay);
+            }).toList();
 
         if (overdue.isEmpty) {
           return const Center(

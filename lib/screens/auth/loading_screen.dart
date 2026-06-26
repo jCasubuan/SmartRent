@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 
 class LoadingScreen extends StatelessWidget {
   const LoadingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
@@ -14,23 +16,23 @@ class LoadingScreen extends StatelessWidget {
           children: [
             Image.asset(
               'assets/icons/smart_rent_logo.jpg',
-              width: 260,
+              width: r.s(260),
               fit: BoxFit.contain,
             ),
-            const SizedBox(height: 48),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
+            SizedBox(height: r.s(48)),
+            SizedBox(
+              width: r.s(24),
+              height: r.s(24),
+              child: const CircularProgressIndicator(
                 strokeWidth: 2.5,
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: r.s(16)),
+            Text(
               'Please wait...',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: r.sp(13),
                 color: AppColors.textMid,
                 fontWeight: FontWeight.w500,
               ),

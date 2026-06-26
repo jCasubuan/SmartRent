@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/controllers/login_controller.dart';
 import 'package:smart_rent/core/widgets/field_label.dart';
 import 'package:smart_rent/core/widgets/input_field.dart';
@@ -70,6 +71,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -82,18 +84,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: r.s(24), vertical: r.s(16)),
           child: _emailSent && !_isLimitReached
-              ? _buildSuccessState()
+              ? _buildSuccessState(r)
               : _isLimitReached
-                  ? _buildLimitReachedState()
-                  : _buildInputState(),
+                  ? _buildLimitReachedState(r)
+                  : _buildInputState(r),
         ),
       ),
     );
   }
 
-  Widget _buildInputState() {
+  Widget _buildInputState(Responsive r) {
     final remaining = _maxAttempts - _attemptCount;
 
     return Form(
@@ -101,29 +103,29 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Find your account',
             style: TextStyle(
-              fontSize: 22,
+              fontSize: r.sp(22),
               fontWeight: FontWeight.w700,
               color: AppColors.textDark,
             ),
           ),
 
-          const SizedBox(height: 8),
+          SizedBox(height: r.s(8)),
 
-          const Text(
+          Text(
             'Enter your email address.',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: r.sp(14),
               color: AppColors.textMid,
             ),
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: r.s(24)),
 
           const FieldLabel(label: 'EMAIL ADDRESS'),
-          const SizedBox(height: 8),
+          SizedBox(height: r.s(8)),
           InputField(
             controller: _emailController,
             hint: 'example@gmail.com',
@@ -132,24 +134,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             validator: _controller.validateEmail,
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: r.s(12)),
 
           // Attempt counter warning
           if (_attemptCount > 0)
             Text(
               '$remaining attempt${remaining == 1 ? '' : 's'} remaining.',
-              style: const TextStyle(
-                fontSize: 12,
+              style: TextStyle(
+                fontSize: r.sp(12),
                 color: AppColors.errorHighlight,
                 fontWeight: FontWeight.w500,
               ),
             ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: r.s(24)),
 
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: r.s(50),
             child: ElevatedButton(
               onPressed: (_isLoading || _isLimitReached) ? null : _handleSubmit,
               style: ElevatedButton.styleFrom(
@@ -162,19 +164,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
               ),
               child: _isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
+                  ? SizedBox(
+                      width: r.s(22),
+                      height: r.s(22),
+                      child: const CircularProgressIndicator(
                         strokeWidth: 2.5,
                         valueColor: AlwaysStoppedAnimation<Color>(
                             AppColors.defaultForeground),
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'Submit',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: r.sp(15),
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
                       ),
@@ -186,48 +188,48 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildSuccessState() {
+  Widget _buildSuccessState(Responsive r) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Check your email',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: r.sp(22),
             fontWeight: FontWeight.w700,
             color: AppColors.textDark,
           ),
         ),
 
-        const SizedBox(height: 8),
+        SizedBox(height: r.s(8)),
 
         Text(
           'We sent a password reset link to ${_emailController.text.trim()}. '
           'Click the link in the email to reset your password.\n\n'
           "Can't find it? Check your spam or junk folder.",
-          style: const TextStyle(
-            fontSize: 14,
+          style: TextStyle(
+            fontSize: r.sp(14),
             color: AppColors.textMid,
             height: 1.5,
           ),
         ),
 
         if (_attemptCount < _maxAttempts) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: r.s(12)),
           Text(
             'You have ${_maxAttempts - _attemptCount} reset attempt${_maxAttempts - _attemptCount == 1 ? '' : 's'} remaining.',
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: r.sp(12),
               color: AppColors.textLight,
             ),
           ),
         ],
 
-        const SizedBox(height: 32),
+        SizedBox(height: r.s(32)),
 
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: r.s(50),
           child: ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
@@ -238,10 +240,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 borderRadius: BorderRadius.circular(25),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Back to Sign In',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: r.sp(15),
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
               ),
@@ -251,14 +253,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
         // Resend option if attempts remain
         if (_attemptCount < _maxAttempts) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: r.s(16)),
           Center(
             child: GestureDetector(
               onTap: () => setState(() => _emailSent = false),
-              child: const Text(
+              child: Text(
                 'Try a different email',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: r.sp(13),
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
@@ -270,37 +272,37 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildLimitReachedState() {
+  Widget _buildLimitReachedState(Responsive r) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Too many attempts',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: r.sp(22),
             fontWeight: FontWeight.w700,
             color: AppColors.textDark,
           ),
         ),
 
-        const SizedBox(height: 8),
+        SizedBox(height: r.s(8)),
 
-        const Text(
+        Text(
           'You have reached the maximum number of password reset attempts for this session. '
           'Please try signing in using a different method.',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: r.sp(14),
             color: AppColors.textMid,
             height: 1.5,
           ),
         ),
 
-        const SizedBox(height: 32),
+        SizedBox(height: r.s(32)),
 
         // Back to Sign In
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: r.s(50),
           child: ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
@@ -311,10 +313,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 borderRadius: BorderRadius.circular(25),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Back to Sign In',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: r.sp(15),
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
               ),
@@ -322,33 +324,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ),
 
-        const SizedBox(height: 16),
+        SizedBox(height: r.s(16)),
 
         // Try Google or Facebook suggestion
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(r.s(16)),
           decoration: BoxDecoration(
             color: AppColors.surfaceGrey,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border),
           ),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Try signing in with',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: r.sp(13),
                   fontWeight: FontWeight.w600,
                   color: AppColors.textDark,
                 ),
               ),
-              SizedBox(height: 6),
+              SizedBox(height: r.s(6)),
               Text(
                 '• Continue with Google\n• Continue with Facebook',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: r.sp(13),
                   color: AppColors.textMid,
                   height: 1.6,
                 ),

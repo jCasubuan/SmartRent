@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 
 /// Universal gown card used in both the admin inventory grid and the
@@ -40,6 +41,7 @@ class GownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -68,35 +70,35 @@ class GownCard extends StatelessWidget {
                   ),
                   child: Container(
                     width: double.infinity,
-                    height: 160,
+                    height: r.s(160),
                     color: AppColors.surfaceGrey,
                     child: gown.imageUrls.isNotEmpty
                         ? CachedImage(
                             imageUrl: gown.imageUrls.first,
                             width: double.infinity,
-                            height: 160,
+                            height: r.s(160),
                             fit: BoxFit.contain,
-                            errorWidget: _placeholder(),
+                            errorWidget: _placeholder(r),
                           )
-                        : _placeholder(),
+                        : _placeholder(r),
                   ),
                 ),
 
                 // Status badge — bottom-left
                 Positioned(
-                  bottom: 8,
-                  left: 8,
+                  bottom: r.s(8),
+                  left: r.s(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: r.s(8), vertical: r.s(4)),
                     decoration: BoxDecoration(
                       color: AppColors.gownStatusColor(gown.status),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       AppColors.gownStatusLabel(gown.status),
-                      style: const TextStyle(
-                        fontSize: 10,
+                      style: TextStyle(
+                        fontSize: r.sp(10),
                         fontWeight: FontWeight.w700,
                         color: AppColors.defaultForeground,
                         letterSpacing: 0.5,
@@ -108,13 +110,13 @@ class GownCard extends StatelessWidget {
                 // Bookmark icon — top-right (client only)
                 if (onBookmarkTap != null)
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: r.s(8),
+                    right: r.s(8),
                     child: GestureDetector(
                       onTap: onBookmarkTap,
                       child: Container(
-                        width: 30,
-                        height: 30,
+                        width: r.s(30),
+                        height: r.s(30),
                         decoration: BoxDecoration(
                           color: AppColors.overlayDark,
                           shape: BoxShape.circle,
@@ -126,7 +128,7 @@ class GownCard extends StatelessWidget {
                           color: isBookmarked
                               ? AppColors.primary
                               : AppColors.defaultForeground,
-                          size: 16,
+                          size: r.s(16),
                         ),
                       ),
                     ),
@@ -136,7 +138,7 @@ class GownCard extends StatelessWidget {
 
             // ── Info ────────────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              padding: EdgeInsets.fromLTRB(r.s(10), r.s(8), r.s(10), r.s(10)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -144,8 +146,8 @@ class GownCard extends StatelessWidget {
                   // Name — up to 2 lines
                   Text(
                     gown.name,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: r.sp(13),
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
                       height: 1.3,
@@ -154,38 +156,38 @@ class GownCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
 
-                  const SizedBox(height: 4),
+                  SizedBox(height: r.s(4)),
 
                   // Price
                   Text(
                     '₱${PriceFormatter.format(gown.rentalPrice)}',
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: r.sp(14),
                       fontWeight: FontWeight.w700,
                       color: AppColors.primary,
                     ),
                   ),
 
-                  const SizedBox(height: 4),
+                  SizedBox(height: r.s(4)),
 
                   // Category
                   Text(
                     gown.category,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: r.sp(12),
                       color: AppColors.textLight,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
 
-                  const SizedBox(height: 1),
+                  SizedBox(height: r.s(1)),
 
                   // Color
                   Text(
                     gown.color,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: r.sp(12),
                       color: AppColors.textLight,
                     ),
                     maxLines: 1,
@@ -202,14 +204,14 @@ class GownCard extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() {
-    return const SizedBox(
+  Widget _placeholder(Responsive r) {
+    return SizedBox(
       width: double.infinity,
-      height: 160,
+      height: r.s(160),
       child: Icon(
         Icons.checkroom_outlined,
         color: AppColors.border,
-        size: 40,
+        size: r.s(40),
       ),
     );
   }

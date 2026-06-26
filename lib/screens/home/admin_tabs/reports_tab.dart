@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/services/reports_service.dart';
 
 /// Admin reports tab — shows revenue analytics from completed rentals.
@@ -150,18 +151,19 @@ class _ReportsTabState extends State<ReportsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       appBar: AppBar(
         backgroundColor: AppColors.surfaceGrey,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Reports',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
       ),
@@ -170,7 +172,7 @@ class _ReportsTabState extends State<ReportsTab> {
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+              padding: EdgeInsets.fromLTRB(r.s(16), r.s(8), r.s(16), r.s(32)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -502,10 +504,8 @@ class _BarChart extends StatelessWidget {
     final entries = revenueByDay.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 
-    // Take last 7 entries max for readability
-    final visible = entries.length > 7
-        ? entries.sublist(entries.length - 7)
-        : entries;
+    // Show ALL entries — scrollable horizontally
+    final visible = entries;
 
     final maxVal =
         visible.fold<double>(0, (m, e) => e.value > m ? e.value : m);
@@ -515,10 +515,14 @@ class _BarChart extends StatelessWidget {
     final steps = 5;
     final stepValue = yMax / steps;
 
+    // Fixed width per bar — ensures readability
+    const double barWidth = 48.0;
+    final chartWidth = visible.length * barWidth;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Y-axis labels
+        // Y-axis labels (fixed, doesn't scroll)
         SizedBox(
           width: 40,
           child: Column(
@@ -537,74 +541,81 @@ class _BarChart extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // Chart area with grid lines + bars
+        // Scrollable chart area
         Expanded(
-          child: Stack(
-            children: [
-              // Grid lines
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(steps + 1, (i) {
-                  return Container(
-                    height: 1,
-                    color: AppColors.border.withValues(alpha: 0.5),
-                  );
-                }),
-              ),
-              // Bars
-              Positioned.fill(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: visible.map((entry) {
-                    final ratio = yMax > 0 ? entry.value / yMax : 0.0;
-                    final label = _formatDayLabel(entry.key);
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: chartWidth < 200 ? 200 : chartWidth,
+              child: Stack(
+                children: [
+                  // Grid lines
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(steps + 1, (i) {
+                      return Container(
+                        height: 1,
+                        color: AppColors.border.withValues(alpha: 0.5),
+                      );
+                    }),
+                  ),
+                  // Bars
+                  Positioned.fill(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: visible.map((entry) {
+                        final ratio = yMax > 0 ? entry.value / yMax : 0.0;
+                        final label = _formatDayLabel(entry.key);
 
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 3),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              _shortValue(entry.value),
-                              style: const TextStyle(
-                                fontSize: 9,
-                                color: AppColors.textMid,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Flexible(
-                              child: FractionallySizedBox(
-                                heightFactor: ratio.clamp(0.02, 1.0),
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(4),
+                        return SizedBox(
+                          width: barWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  _shortValue(entry.value),
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    color: AppColors.textMid,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 3),
+                                Flexible(
+                                  child: FractionallySizedBox(
+                                    heightFactor: ratio.clamp(0.02, 1.0),
+                                    child: Container(
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  label,
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    color: AppColors.textLight,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              label,
-                              style: const TextStyle(
-                                fontSize: 9,
-                                color: AppColors.textLight,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ],

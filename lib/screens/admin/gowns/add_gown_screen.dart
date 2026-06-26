@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/category_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/field_label.dart';
 import 'package:smart_rent/core/widgets/gown_form_field.dart';
 import 'package:smart_rent/services/category_service.dart';
@@ -406,53 +407,14 @@ void _showPermissionDialog() {
       return;
     }
 
-    // Check for duplicate name
+    // Check for duplicate name (case-insensitive hard block)
     final duplicateCode = await GownService.checkDuplicateName(
       _nameController.text.trim(),
     );
 
     if (duplicateCode != null && mounted) {
-      final proceed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16)),
-          title: const Text(
-            'Duplicate Name',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-          ),
-          content: Text(
-            'A gown named "${_nameController.text.trim()}" already exists ($duplicateCode). Save anyway?',
-            style: const TextStyle(fontSize: 14, height: 1.5),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                    color: AppColors.textMid, fontWeight: FontWeight.w600),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.defaultForeground,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text(
-                'Save Anyway',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        ),
-      );
-
-      if (proceed != true) return;
+      _showSnackbar('A gown named "${_nameController.text.trim()}" already exists ($duplicateCode). Please choose a different name.');
+      return;
     }
 
     setState(() => _isSaving = true);
@@ -469,7 +431,7 @@ void _showPermissionDialog() {
     final success = await GownService.addGown(
       name: _nameController.text.trim(),
       category: _selectedCategory!.name,
-      color: _colorController.text.trim(),
+      color: _titleCase(_colorController.text.trim()),
       measurements: measurementsMap,
       rentalPrice: double.tryParse(_priceController.text.trim()) ?? 0.0,
       description: _descriptionController.text.trim(),
@@ -499,8 +461,19 @@ void _showPermissionDialog() {
     );
   }
 
+  /// Normalizes a string to Title Case (each word capitalized).
+  /// "off-white" → "Off-White", "IVORY" → "Ivory"
+  String _titleCase(String input) {
+    if (input.isEmpty) return input;
+    return input.split(RegExp(r'[\s\-]')).map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(input.contains('-') ? '-' : ' ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
@@ -511,12 +484,12 @@ void _showPermissionDialog() {
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Add New Gown',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         centerTitle: true,
@@ -525,7 +498,7 @@ void _showPermissionDialog() {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            padding: EdgeInsets.fromLTRB(r.s(24), r.s(16), r.s(24), r.s(24)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -547,8 +520,15 @@ void _showPermissionDialog() {
                     if (val == null || val.trim().isEmpty) {
                       return 'Please enter gown name';
                     }
-                    if (val.trim().length < 2) {
+                    final name = val.trim();
+                    if (name.length < 2) {
                       return 'Name must be at least 2 characters';
+                    }
+                    if (!RegExp(r'[a-zA-Z].*[a-zA-Z]').hasMatch(name)) {
+                      return 'Name must contain at least 2 letters';
+                    }
+                    if (!RegExp(r'^[a-zA-Z]').hasMatch(name)) {
+                      return 'Name must start with a letter';
                     }
                     return null;
                   },
@@ -681,6 +661,13 @@ void _showPermissionDialog() {
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Required';
+                              }
+                              final color = val.trim();
+                              if (!RegExp(r'^[a-zA-Z]').hasMatch(color)) {
+                                return 'Must start with a letter';
+                              }
+                              if (color.replaceAll(RegExp(r'[^a-zA-Z]'), '').length < 2) {
+                                return 'Must contain at least 2 letters';
                               }
                               return null;
                             },

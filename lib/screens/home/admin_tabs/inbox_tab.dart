@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/models/rental_model.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/screens/admin/cleaning/cleaning_screen.dart';
 import 'package:smart_rent/screens/admin/gowns/gown_detail_screen.dart';
 import 'package:smart_rent/screens/admin/overdue/overdue_screen.dart';
@@ -39,18 +40,19 @@ class _InboxTabState extends State<InboxTab>
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Scaffold(
       backgroundColor: AppColors.surfaceGrey,
       appBar: AppBar(
         backgroundColor: AppColors.surfaceGrey,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Inbox',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: r.sp(18),
           ),
         ),
         bottom: TabBar(
@@ -58,8 +60,8 @@ class _InboxTabState extends State<InboxTab>
           labelColor: AppColors.defaultForeground,
           unselectedLabelColor: AppColors.textMid,
           labelStyle:
-              const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-          unselectedLabelStyle: const TextStyle(fontSize: 13),
+              TextStyle(fontWeight: FontWeight.w700, fontSize: r.sp(13)),
+          unselectedLabelStyle: TextStyle(fontSize: r.sp(13)),
           indicator: BoxDecoration(
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(20),
@@ -118,28 +120,33 @@ class _NotificationsList extends StatelessWidget {
         // Group logs by date section
         final items = _buildGroupedItems(logs);
 
+        // Check if there are any unread
+        final hasUnread = logs.any(
+            (n) => (n['isRead'] as bool? ?? true) == false);
+
         return Column(
           children: [
-            // Mark all as read button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  GestureDetector(
-                    onTap: () => AdminLogService.markAllRead(),
-                    child: const Text(
-                      'Mark all as read',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
+            // Mark all as read button — only show when unread exist
+            if (hasUnread)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    GestureDetector(
+                      onTap: () => AdminLogService.markAllRead(),
+                      child: const Text(
+                        'Mark all as read',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),

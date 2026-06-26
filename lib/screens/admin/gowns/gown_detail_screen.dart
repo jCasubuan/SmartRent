@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_rent/core/constants/app_colors.dart';
 import 'package:smart_rent/core/models/gown_model.dart';
 import 'package:smart_rent/core/utils/price_formatter.dart';
+import 'package:smart_rent/core/utils/responsive_helper.dart';
 import 'package:smart_rent/core/widgets/cached_image.dart';
 import 'package:smart_rent/screens/admin/gowns/edit_gown_screen.dart';
 import 'package:smart_rent/services/gown_service.dart';
@@ -197,6 +198,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final images = _gown.imageUrls;
     final hasImages = images.isNotEmpty;
     final imageCount = images.length;
@@ -324,22 +326,22 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                         top: Radius.circular(24),
                       ),
                     ),
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                    padding: EdgeInsets.fromLTRB(r.s(20), r.s(20), r.s(20), r.s(32)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Status badge
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: r.s(10), vertical: r.s(5)),
                           decoration: BoxDecoration(
                             color: _statusColor(_gown.status),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             _statusLabel(_gown.status),
-                            style: const TextStyle(
-                              fontSize: 11,
+                            style: TextStyle(
+                              fontSize: r.sp(11),
                               fontWeight: FontWeight.w700,
                               color: AppColors.defaultForeground,
                               letterSpacing: 0.5,
@@ -347,7 +349,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 10),
+                        SizedBox(height: r.s(10)),
 
                         // Name + Price
                         Row(
@@ -356,18 +358,18 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                             Expanded(
                               child: Text(
                                 _gown.name,
-                                style: const TextStyle(
-                                  fontSize: 22,
+                                style: TextStyle(
+                                  fontSize: r.sp(22),
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.textDark,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: r.s(12)),
                             Text(
                               '₱${PriceFormatter.format(_gown.rentalPrice)}',
-                              style: const TextStyle(
-                                fontSize: 20,
+                              style: TextStyle(
+                                fontSize: r.sp(20),
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
                               ),
@@ -375,7 +377,7 @@ class _GownDetailScreenState extends State<GownDetailScreen> {
                           ],
                         ),
 
-                        const SizedBox(height: 16),
+                        SizedBox(height: r.s(16)),
                         const Divider(color: AppColors.border),
                         const SizedBox(height: 12),
 
@@ -522,31 +524,32 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: r.s(8)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: r.s(100),
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 13,
+              style: TextStyle(
+                fontSize: r.sp(13),
                 color: AppColors.textLight,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          const Text(
+          Text(
             ': ',
-            style: TextStyle(fontSize: 13, color: AppColors.textLight),
+            style: TextStyle(fontSize: r.sp(13), color: AppColors.textLight),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 13,
+              style: TextStyle(
+                fontSize: r.sp(13),
                 color: AppColors.textDark,
                 fontWeight: FontWeight.w600,
               ),
@@ -610,6 +613,7 @@ class _MeasurementsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive(context);
     final entries = measurements.entries.toList();
 
     return GridView.builder(
@@ -627,7 +631,7 @@ class _MeasurementsGrid extends StatelessWidget {
         final val = entries[index].value;
         return Container(
           padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              EdgeInsets.symmetric(horizontal: r.s(12), vertical: r.s(8)),
           decoration: BoxDecoration(
             color: AppColors.surfaceCream,
             borderRadius: BorderRadius.circular(8),
@@ -639,8 +643,8 @@ class _MeasurementsGrid extends StatelessWidget {
             children: [
               Text(
                 key,
-                style: const TextStyle(
-                  fontSize: 10,
+                style: TextStyle(
+                  fontSize: r.sp(10),
                   color: AppColors.textLight,
                   fontWeight: FontWeight.w500,
                 ),
@@ -649,8 +653,8 @@ class _MeasurementsGrid extends StatelessWidget {
               ),
               Text(
                 val.isEmpty ? '—' : val,
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: r.sp(13),
                   color: AppColors.textDark,
                   fontWeight: FontWeight.w700,
                 ),
