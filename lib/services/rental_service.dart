@@ -160,8 +160,8 @@ class RentalService {
 
   // ── Admin — actions ────────────────────────────────────────────────────────
 
-  /// Approves a rental request, marks the gown as reserved, and notifies the customer.
-  /// The gown shows as 'Unavailable' until the customer picks it up.
+  /// Approves a rental request, marks the gown as reserved, notifies the customer,
+  /// and auto-rejects any other pending requests for the same gown with overlapping dates.
   static Future<bool> approveRequest(String rentalId, String gownId) async {
     try {
       final rentalDoc = await _collection.doc(rentalId).get();
@@ -169,6 +169,7 @@ class RentalService {
       final customerId = '${data?['customerId'] ?? ''}';
       final gownName = '${data?['gownName'] ?? 'your gown'}';
       final pickupDate = (data?['pickupDate'] as Timestamp?)?.toDate();
+      final returnDate = (data?['returnDate'] as Timestamp?)?.toDate();
       final pickupStr = pickupDate != null
           ? '${_monthName(pickupDate.month)} ${pickupDate.day}, ${pickupDate.year}'
           : '';
@@ -204,10 +205,89 @@ class RentalService {
         targetId: gownId,
       );
 
+      // ── Auto-reject conflicting pending requests ────────────────────────
+      // Any other pending request for the same gown with overlapping dates
+      // gets automatically rejected to prevent double booking.
+      if (pickupDate != null && returnDate != null) {
+        await _autoRejectConflicts(
+          approvedRentalId: rentalId,
+          gownId: gownId,
+          gownName: gownName,
+          approvedPickup: pickupDate,
+          approvedReturn: returnDate,
+        );
+      }
+
       return true;
     } catch (e) {
       debugPrint('[RentalService.approveRequest] $e');
       return false;
+    }
+  }
+
+  /// Auto-rejects all pending requests for the same gown that have
+  /// overlapping dates with the approved request.
+  /// Overlap condition: request.pickup <= approved.return AND request.return >= approved.pickup
+  static Future<void> _autoRejectConflicts({
+    required String approvedRentalId,
+    required String gownId,
+    required String gownName,
+    required DateTime approvedPickup,
+    required DateTime approvedReturn,
+  }) async {
+    try {
+      // Get all other pending requests for this gown
+      final snapshot = await _collection
+          .where('gownId', isEqualTo: gownId)
+          .where('status', isEqualTo: 'pending')
+          .get();
+
+      for (final doc in snapshot.docs) {
+        // Skip the one we just approved
+        if (doc.id == approvedRentalId) continue;
+
+        final reqData = doc.data();
+        final reqPickup = (reqData['pickupDate'] as Timestamp?)?.toDate();
+        final reqReturn = (reqData['returnDate'] as Timestamp?)?.toDate();
+
+        if (reqPickup == null || reqReturn == null) continue;
+
+        // Check date overlap
+        final hasOverlap = reqPickup.isBefore(approvedReturn.add(const Duration(days: 1))) &&
+            reqReturn.isAfter(approvedPickup.subtract(const Duration(days: 1)));
+
+        if (!hasOverlap) continue;
+
+        // Auto-reject this conflicting request
+        await _collection.doc(doc.id).update({
+          'status': 'rejected',
+          'rejectedAt': FieldValue.serverTimestamp(),
+        });
+
+        // Notify the affected customer
+        final affectedCustomerId = '${reqData['customerId'] ?? ''}';
+        if (affectedCustomerId.isNotEmpty) {
+          await NotificationService.sendNotification(
+            customerId: affectedCustomerId,
+            title: 'Request not available',
+            body: 'Sorry, "$gownName" has been booked by another customer for your requested dates. Feel free to browse other available gowns or choose different dates.',
+            type: 'rejected',
+            rentalId: doc.id,
+            gownName: gownName,
+          );
+        }
+
+        // Admin log
+        AdminLogService.log(
+          type: AdminLogType.rentalRejected,
+          title: 'Auto-rejected (conflict)',
+          body: 'Rejected "${reqData['customerName'] ?? 'customer'}" — date conflict with approved booking',
+          targetType: 'rental',
+          targetId: gownId,
+        );
+      }
+    } catch (e) {
+      debugPrint('[RentalService._autoRejectConflicts] $e');
     }
   }
 
