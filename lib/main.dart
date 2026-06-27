@@ -55,3 +55,4 @@ class SmartRentApp extends StatelessWidget {
     );
   }
 }
+
